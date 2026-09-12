@@ -113,9 +113,8 @@
   // Public anon key: safe to expose here. Row Level Security on the
   // "sites" table only allows INSERT for anonymous requests, nothing can
   // be read, updated, or deleted through this key.
-  SUPABASE_URL=https://bbprhvndsugurdermyzl.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicHJodm5kc3VndXJkZXJteXpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkwODksImV4cCI6MjEwNDc0NTA4OX0.cWwe84g5JtkwKAChDISoUX_O_z4tyyoOhxIrAo5wkDE
-
+const SUPABASE_URL = "https://bbprhvndsugurdermyzl.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicHJodm5kc3VndXJkZXJteXpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkwODksImV4cCI6MjEwNDc0NTA4OX0.cWwe84g5JtkwKAChDISoUX_O_z4tyyoOhxIrAo5wkDE";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const form = document.getElementById("signup-form");
