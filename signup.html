@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Add Your Site</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --blue: #1A6BFF;
+    --navy: #111A3C;
+    --grey: #6B7280;
+    --offwhite: #F5F7FC;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    background: var(--offwhite);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(17, 26, 60, 0.08);
+    padding: 40px;
+    max-width: 440px;
+    width: 100%;
+  }
+  h1 {
+    font-size: 24px;
+    color: var(--navy);
+    margin: 0 0 8px;
+  }
+  p.sub {
+    color: var(--grey);
+    margin: 0 0 28px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--navy);
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+  button {
+    width: 100%;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 24px;
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  #message {
+    margin-top: 16px;
+    font-size: 14px;
+    text-align: center;
+  }
+  #message.success { color: #059669; }
+  #message.error { color: #DC2626; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Start monitoring your site</h1>
+  <p class="sub">We'll check your site's speed, uptime, and broken pages every week, and email you a plain-language report.</p>
+
+  <form id="signup-form">
+    <label for="url">Website URL</label>
+    <input type="url" id="url" placeholder="https://yourdomain.com" required />
+
+    <label for="email">Your email</label>
+    <input type="email" id="email" placeholder="you@example.com" required />
+
+    <label for="name">Project name (optional)</label>
+    <input type="text" id="name" placeholder="Your Business" />
+
+    <button type="submit" id="submit-btn">Start Monitoring</button>
+  </form>
+
+  <div id="message"></div>
+</div>
+
+<script>
+  // Public anon key: safe to expose here. Row Level Security on the
+  // "sites" table only allows INSERT for anonymous requests, nothing can
+  // be read, updated, or deleted through this key.
+  SUPABASE_URL=https://bbprhvndsugurdermyzl.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicHJodm5kc3VndXJkZXJteXpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkwODksImV4cCI6MjEwNDc0NTA4OX0.cWwe84g5JtkwKAChDISoUX_O_z4tyyoOhxIrAo5wkDE
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const form = document.getElementById("signup-form");
+  const messageEl = document.getElementById("message");
+  const submitBtn = document.getElementById("submit-btn");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Adding...";
+    messageEl.textContent = "";
+    messageEl.className = "";
+
+    const url = document.getElementById("url").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const name = document.getElementById("name").value.trim() || null;
+
+    const { error } = await supabaseClient
+      .from("sites")
+      .insert({ url, owner_email: email, name });
+
+    if (error) {
+      messageEl.textContent = "Something went wrong, please try again.";
+      messageEl.className = "error";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Start Monitoring";
+      return;
+    }
+
+    messageEl.textContent = "You're in! Your first report arrives after the next weekly check.";
+    messageEl.className = "success";
+    form.reset();
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Start Monitoring";
+  });
+</script>
+
+</body>
+</html>

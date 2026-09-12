@@ -1,4 +1,6 @@
-// Sends the weekly email digest for every site.
+// Sends the weekly email digest for every site, to that site's own owner.
+// Falls back to DIGEST_TO_EMAIL (from .env) for sites added manually
+// without an owner_email, useful for your own testing.
 // Usage: npm run send-digest
 
 import "dotenv/config";
@@ -7,7 +9,7 @@ import { supabase } from "./supabase-client.js";
 import { getScoreHistory, buildSummary } from "./digest-summary.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const DIGEST_TO_EMAIL = process.env.DIGEST_TO_EMAIL;
+const FALLBACK_EMAIL = process.env.DIGEST_TO_EMAIL;
 
 function renderEmailHtml(site, summary) {
   const alertBanner = summary.isRegression
@@ -18,6 +20,9 @@ function renderEmailHtml(site, summary) {
     : "";
 
   const bulletsHtml = summary.bullets.map((b) => `<li style="margin-bottom:6px;">${b}</li>`).join("");
+  const recommendationsHtml = summary.recommendations
+    .map((r) => `<li style="margin-bottom:8px;">${r}</li>`)
+    .join("");
 
   return `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
@@ -29,8 +34,8 @@ function renderEmailHtml(site, summary) {
       </div>
       <ul style="color:#374151;padding-left:20px;">${bulletsHtml}</ul>
       <div style="background:#F5F7FC;border-radius:8px;padding:14px 16px;margin-top:16px;">
-        <strong style="color:#111A3C;">Recommendation:</strong>
-        <span style="color:#374151;"> ${summary.recommendation}</span>
+        <strong style="color:#111A3C;">Recommendations:</strong>
+        <ul style="color:#374151;padding-left:20px;margin-top:8px;margin-bottom:0;">${recommendationsHtml}</ul>
       </div>
       <p style="color:#9CA3AF;font-size:12px;margin-top:32px;">
         You're receiving this because ${site.url} is being monitored on PromptHall.
@@ -40,6 +45,12 @@ function renderEmailHtml(site, summary) {
 }
 
 async function sendDigestForSite(site) {
+  const recipient = site.owner_email || FALLBACK_EMAIL;
+  if (!recipient) {
+    console.log(`No owner_email set for ${site.url} and no fallback configured, skipping.`);
+    return;
+  }
+
   const history = await getScoreHistory(site.id);
   if (history.length === 0) {
     console.log(`No scores yet for ${site.url}, skipping.`);
@@ -51,7 +62,7 @@ async function sendDigestForSite(site) {
 
   const { error } = await resend.emails.send({
     from: "PromptHall Monitor <onboarding@resend.dev>",
-    to: DIGEST_TO_EMAIL,
+    to: recipient,
     subject: summary.isRegression
       ? `⚠️ ${site.url} — something broke this week`
       : `${site.url} — weekly report (${summary.score}/100)`,
@@ -62,15 +73,15 @@ async function sendDigestForSite(site) {
     console.error(`Failed to send digest for ${site.url}:`, error.message || error);
     return;
   }
-  console.log(`Email digest sent for ${site.url}`);
+  console.log(`Email digest sent for ${site.url} -> ${recipient}`);
 }
 
 async function main() {
-  if (!process.env.RESEND_API_KEY || !DIGEST_TO_EMAIL) {
-    throw new Error("Missing RESEND_API_KEY or DIGEST_TO_EMAIL in .env");
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("Missing RESEND_API_KEY in .env");
   }
 
-  const { data: sites, error } = await supabase.from("sites").select("id, url, contact_url");
+  const { data: sites, error } = await supabase.from("sites").select("id, url, owner_email");
   if (error) throw new Error(`Failed to load sites: ${error.message}`);
   if (!sites || sites.length === 0) {
     console.log("No sites to report on.");

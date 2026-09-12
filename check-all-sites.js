@@ -1,13 +1,13 @@
 // Loops through every row in "sites", runs a PageSpeed check on the
-// homepage, and an uptime check on both the homepage and the optional
-// contact/checkout page. Saves it all into one "scores" row per site.
-// Usage: npm run check-all
+// homepage, and crawls + checks every discoverable page on the site
+// (up to a cap) for broken links and slow pages. Saves it all into one
+// "scores" row per site. Usage: npm run check-all
 
 import "dotenv/config";
 import { supabase } from "./supabase-client.js";
+import { crawlAndCheckSite } from "./site-crawler.js";
 
 const API_KEY = process.env.PAGESPEED_API_KEY;
-const UPTIME_TIMEOUT_MS = 10000;
 
 async function fetchPageSpeed(url) {
   const endpoint = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
@@ -33,33 +33,13 @@ async function fetchPageSpeed(url) {
   };
 }
 
-// A plain HTTP check: is this page actually loading with a healthy status code.
-// This is intentionally separate from PageSpeed, a page can be "up" but slow,
-// or "down" but otherwise well-optimized, they catch different failures.
-async function checkUptime(url) {
-  if (!url) return { checked: false };
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), UPTIME_TIMEOUT_MS);
-
-  try {
-    const res = await fetch(url, { signal: controller.signal, redirect: "follow" });
-    clearTimeout(timeout);
-    return { checked: true, status: res.status, ok: res.ok };
-  } catch (err) {
-    clearTimeout(timeout);
-    return { checked: true, status: null, ok: false, error: err.message };
-  }
-}
-
 async function checkOneSite(site) {
   try {
     console.log(`Checking ${site.url} ...`);
 
-    const [perf, homepageUptime, contactUptime] = await Promise.all([
+    const [perf, siteReport] = await Promise.all([
       fetchPageSpeed(site.url),
-      checkUptime(site.url),
-      checkUptime(site.contact_url),
+      crawlAndCheckSite(site.url),
     ]);
 
     const { error: insertError } = await supabase.from("scores").insert({
@@ -69,19 +49,22 @@ async function checkOneSite(site) {
       cls: perf.cls,
       tbt: perf.tbt,
       raw_json: perf.raw,
-      homepage_status: homepageUptime.status ?? null,
-      homepage_ok: homepageUptime.ok ?? null,
-      contact_status: contactUptime.checked ? contactUptime.status ?? null : null,
-      contact_ok: contactUptime.checked ? contactUptime.ok ?? null : null,
+      pages_checked: siteReport.pagesChecked,
+      pages_broken_count: siteReport.brokenCount,
+      pages_slow_count: siteReport.slowCount,
+      pages_report: siteReport.pages,
     });
 
     if (insertError) throw new Error(insertError.message);
 
-    const uptimeNote = homepageUptime.ok ? "up" : `DOWN (${homepageUptime.status ?? "no response"})`;
-    console.log(`  -> saved. Score: ${perf.performanceScore}/100, homepage: ${uptimeNote}`);
-    if (site.contact_url) {
-      const contactNote = contactUptime.ok ? "up" : `DOWN (${contactUptime.status ?? "no response"})`;
-      console.log(`     contact page: ${contactNote}`);
+    console.log(
+      `  -> saved. Score: ${perf.performanceScore}/100, pages checked: ${siteReport.pagesChecked}, broken: ${siteReport.brokenCount}, slow: ${siteReport.slowCount}`
+    );
+    if (siteReport.broken.length > 0) {
+      siteReport.broken.forEach((p) => console.log(`     BROKEN: ${p.url} (status ${p.status ?? "no response"})`));
+    }
+    if (siteReport.slow.length > 0) {
+      siteReport.slow.forEach((p) => console.log(`     SLOW: ${p.url} (${p.responseTimeMs}ms)`));
     }
 
     return { site: site.url, ok: true };
@@ -92,7 +75,7 @@ async function checkOneSite(site) {
 }
 
 async function main() {
-  const { data: sites, error } = await supabase.from("sites").select("id, url, contact_url");
+  const { data: sites, error } = await supabase.from("sites").select("id, url");
 
   if (error) throw new Error(`Failed to load sites: ${error.message}`);
   if (!sites || sites.length === 0) {
