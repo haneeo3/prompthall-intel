@@ -7,10 +7,12 @@
   "scripts": {
     "check": "node check-site.js",
     "check-all": "node check-all-sites.js",
-    "add-site": "node add-site.js"
+    "add-site": "node add-site.js",
+    "send-digest": "node --dns-result-order=ipv4first send-digest.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "resend": "^6.28.0"
   }
 }

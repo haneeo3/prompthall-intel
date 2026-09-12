@@ -27,3 +27,11 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
+
+      - name: Send weekly digest emails
+        run: npm run send-digest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_TO_EMAIL: ${{ secrets.DIGEST_TO_EMAIL }}
