@@ -1,71 +1,26 @@
-// Loops through every row in "sites", runs a PageSpeed check on the
-// homepage, and crawls + checks every discoverable page on the site
-// (up to a cap) for broken links and slow pages. Saves it all into one
-// "scores" row per site. Usage: npm run check-all
+// Loops through every row in "sites" and runs the shared checkSite() logic
+// for each, saving the result into "scores". This is what the weekly
+// automation runs. Usage: npm run check-all
 
 import "dotenv/config";
 import { supabase } from "./supabase-client.js";
-import { crawlAndCheckSite } from "./site-crawler.js";
-
-const API_KEY = process.env.PAGESPEED_API_KEY;
-
-async function fetchPageSpeed(url) {
-  const endpoint = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
-  endpoint.searchParams.set("url", url);
-  endpoint.searchParams.set("strategy", "mobile");
-  endpoint.searchParams.set("category", "performance");
-  if (API_KEY) endpoint.searchParams.set("key", API_KEY);
-
-  const res = await fetch(endpoint.toString());
-  if (!res.ok) {
-    throw new Error(`PageSpeed API error: ${res.status} ${res.statusText}`);
-  }
-  const data = await res.json();
-  const lighthouse = data.lighthouseResult;
-  const audits = lighthouse.audits;
-
-  return {
-    performanceScore: Math.round(lighthouse.categories.performance.score * 100),
-    lcp: audits["largest-contentful-paint"].displayValue,
-    cls: audits["cumulative-layout-shift"].displayValue,
-    tbt: audits["total-blocking-time"].displayValue,
-    raw: data,
-  };
-}
+import { checkSite } from "./site-checker.js";
 
 async function checkOneSite(site) {
   try {
     console.log(`Checking ${site.url} ...`);
-
-    const [perf, siteReport] = await Promise.all([
-      fetchPageSpeed(site.url),
-      crawlAndCheckSite(site.url),
-    ]);
+    const result = await checkSite(site.url);
 
     const { error: insertError } = await supabase.from("scores").insert({
       site_id: site.id,
-      performance_score: perf.performanceScore,
-      lcp: perf.lcp,
-      cls: perf.cls,
-      tbt: perf.tbt,
-      raw_json: perf.raw,
-      pages_checked: siteReport.pagesChecked,
-      pages_broken_count: siteReport.brokenCount,
-      pages_slow_count: siteReport.slowCount,
-      pages_report: siteReport.pages,
+      ...result,
     });
 
     if (insertError) throw new Error(insertError.message);
 
     console.log(
-      `  -> saved. Score: ${perf.performanceScore}/100, pages checked: ${siteReport.pagesChecked}, broken: ${siteReport.brokenCount}, slow: ${siteReport.slowCount}`
+      `  -> saved. Score: ${result.performance_score}/100, pages checked: ${result.pages_checked}, broken: ${result.pages_broken_count}, slow: ${result.pages_slow_count}`
     );
-    if (siteReport.broken.length > 0) {
-      siteReport.broken.forEach((p) => console.log(`     BROKEN: ${p.url} (status ${p.status ?? "no response"})`));
-    }
-    if (siteReport.slow.length > 0) {
-      siteReport.slow.forEach((p) => console.log(`     SLOW: ${p.url} (${p.responseTimeMs}ms)`));
-    }
 
     return { site: site.url, ok: true };
   } catch (err) {

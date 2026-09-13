@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Add Your Site</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<title>PromptHall Monitor — Add Your Site</title>
 <style>
   :root {
     --blue: #1A6BFF;
@@ -91,7 +90,7 @@
 
 <div class="card">
   <h1>Start monitoring your site</h1>
-  <p class="sub">We'll check your site's speed, uptime, and broken pages every week, and email you a plain-language report.</p>
+  <p class="sub">We'll check your site right now, speed, uptime, and broken pages, and email you the results in a couple of minutes.</p>
 
   <form id="signup-form">
     <label for="url">Website URL</label>
@@ -100,7 +99,7 @@
     <label for="email">Your email</label>
     <input type="email" id="email" placeholder="you@example.com" required />
 
-    <label for="name">Project name (optional)</label>
+    <label for="name">Business name (optional)</label>
     <input type="text" id="name" placeholder="Your Business" />
 
     <button type="submit" id="submit-btn">Start Monitoring</button>
@@ -110,13 +109,6 @@
 </div>
 
 <script>
-  // Public anon key: safe to expose here. Row Level Security on the
-  // "sites" table only allows INSERT for anonymous requests, nothing can
-  // be read, updated, or deleted through this key.
-const SUPABASE_URL = "https://bbprhvndsugurdermyzl.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicHJodm5kc3VndXJkZXJteXpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkwODksImV4cCI6MjEwNDc0NTA4OX0.cWwe84g5JtkwKAChDISoUX_O_z4tyyoOhxIrAo5wkDE";
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
   const form = document.getElementById("signup-form");
   const messageEl = document.getElementById("message");
   const submitBtn = document.getElementById("submit-btn");
@@ -124,7 +116,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     submitBtn.disabled = true;
-    submitBtn.textContent = "Adding...";
+    submitBtn.textContent = "Checking your site...";
     messageEl.textContent = "";
     messageEl.className = "";
 
@@ -132,23 +124,29 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const email = document.getElementById("email").value.trim();
     const name = document.getElementById("name").value.trim() || null;
 
-    const { error } = await supabaseClient
-      .from("sites")
-      .insert({ url, owner_email: email, name });
+    try {
+      const res = await fetch("/api/add-site", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, email, name }),
+      });
 
-    if (error) {
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      messageEl.textContent = `Done! Your site scored ${data.score}/100. Check your email for the full report.`;
+      messageEl.className = "success";
+      form.reset();
+    } catch (err) {
       messageEl.textContent = "Something went wrong, please try again.";
       messageEl.className = "error";
+    } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = "Start Monitoring";
-      return;
     }
-
-    messageEl.textContent = "You're in! Your first report arrives after the next weekly check.";
-    messageEl.className = "success";
-    form.reset();
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Start Monitoring";
   });
 </script>
 
