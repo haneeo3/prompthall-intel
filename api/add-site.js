@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const html = renderEmailHtml(site, summary);
 
     await resend.emails.send({
-      from: "PromptHall Monitor <onboarding@resend.dev>",
+      from: "PromptHall Monitor <monitor@prompthall.space>",
       to: email,
       subject: `${url} — your first report (${summary.score}/100)`,
       html,

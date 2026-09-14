@@ -28,7 +28,7 @@ async function sendDigestForSite(site) {
   const html = renderEmailHtml(site, summary);
 
   const { error } = await resend.emails.send({
-    from: "PromptHall Monitor <onboarding@resend.dev>",
+    from: "PromptHall Monitor <monitor@prompthall.space>",
     to: recipient,
     subject: summary.isRegression
       ? `⚠️ ${site.url} — something broke this week`
