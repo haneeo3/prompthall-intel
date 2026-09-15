@@ -89,12 +89,20 @@ async function checkPage(url) {
 }
 
 // Main entry point: discover pages, check each one, return a full report.
+// Pages are checked in parallel batches instead of one at a time, checking
+// 20 pages sequentially (each up to 10s) could take 3+ minutes worst case,
+// which blows past serverless function time limits. Batches keep this fast
+// without hammering the target site with 20 simultaneous requests.
+const CONCURRENCY = 5;
+
 export async function crawlAndCheckSite(baseUrl) {
   const pageUrls = await discoverPages(baseUrl);
 
   const results = [];
-  for (const url of pageUrls) {
-    results.push(await checkPage(url));
+  for (let i = 0; i < pageUrls.length; i += CONCURRENCY) {
+    const batch = pageUrls.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.all(batch.map((url) => checkPage(url)));
+    results.push(...batchResults);
   }
 
   const broken = results.filter((p) => !p.ok);
