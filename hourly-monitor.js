@@ -2,23 +2,35 @@
 // Runs every hour via GitHub Actions.
 // Checks every site: important pages first (contact, checkout, booking),
 // then crawls the homepage for additional linked pages.
-// Saves results and processes incidents.
-// Usage: node hourly-monitor.js
 
 import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
 import * as cheerio from "cheerio";
 import { processCheckResults } from "./incident-manager.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 const TIMEOUT_MS = 10000;
 const SLOW_THRESHOLD_MS = 3000;
 const MAX_CRAWLED_PAGES = 10;
 const CONCURRENCY = 5;
+
+// Validate env vars before doing anything else.
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("MISSING ENV VARS:");
+  console.error("SUPABASE_URL:", SUPABASE_URL ? "set" : "MISSING");
+  console.error("SUPABASE_SERVICE_ROLE_KEY:", SUPABASE_KEY ? "set" : "MISSING");
+  process.exit(1);
+}
+
+console.log("ENV OK:");
+console.log("SUPABASE_URL:", SUPABASE_URL.substring(0, 35) + "...");
+console.log("SERVICE_KEY length:", SUPABASE_KEY.length);
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false },
+});
 
 // Check one URL: is it up, what status, how fast.
 async function checkPage(url) {
@@ -53,7 +65,7 @@ async function checkPage(url) {
   }
 }
 
-// Discover internal links from the homepage (one level deep).
+// Discover internal links from the homepage.
 async function discoverPages(baseUrl) {
   const pages = new Set();
   try {
@@ -72,7 +84,9 @@ async function discoverPages(baseUrl) {
         }
       } catch {}
     });
-  } catch {}
+  } catch (err) {
+    console.log(`  Could not crawl ${baseUrl}: ${err.message}`);
+  }
 
   return Array.from(pages).slice(0, MAX_CRAWLED_PAGES);
 }
@@ -93,33 +107,19 @@ async function checkOneSite(site) {
   console.log(`\nChecking: ${label}`);
 
   try {
-    // Build the list of pages to check:
-    // 1. The homepage (always)
-    // 2. Important pages the client specified (contact, checkout, etc.)
-    // 3. Additional pages discovered by crawling the homepage
-    const importantPages = site.important_pages
+    const importantPages = Array.isArray(site.important_pages)
       ? site.important_pages.filter(Boolean)
       : [];
 
     const crawledPages = await discoverPages(site.url);
-
-    // Deduplicate: important pages + homepage + crawled pages
-    const allUrls = [
-      ...new Set([site.url, ...importantPages, ...crawledPages]),
-    ];
-
+    const allUrls = [...new Set([site.url, ...importantPages, ...crawledPages])];
     const results = await checkBatch(allUrls);
 
-    // Log summary
     const broken = results.filter((r) => !r.ok);
     const slow = results.filter((r) => r.ok && r.slow);
-    console.log(
-      `  pages: ${results.length} checked, ${broken.length} broken, ${slow.length} slow`
-    );
+    console.log(`  pages: ${results.length} checked, ${broken.length} broken, ${slow.length} slow`);
 
-    // Save a lightweight uptime record (not the full PageSpeed data,
-    // that runs weekly to avoid burning the free API quota hourly).
-    await supabase.from("uptime_checks").insert({
+    const { error: insertError } = await supabase.from("uptime_checks").insert({
       site_id: site.id,
       checked_at: new Date().toISOString(),
       pages_checked: results.length,
@@ -130,8 +130,14 @@ async function checkOneSite(site) {
       results_json: results,
     });
 
-    // Process incidents: open new ones, close resolved ones, send alerts.
+    if (insertError) {
+      console.error(`  Failed to save uptime record: ${insertError.message}`);
+    } else {
+      console.log(`  Saved uptime record`);
+    }
+
     await processCheckResults(site, results);
+
   } catch (err) {
     console.error(`  FAILED: ${err.message}`);
   }
@@ -139,6 +145,20 @@ async function checkOneSite(site) {
 
 async function main() {
   console.log(`\n[${new Date().toISOString()}] Hourly monitor starting`);
+
+  console.log("\nTesting Supabase connection...");
+  const { data: testData, error: testError } = await supabase
+    .from("sites")
+    .select("id")
+    .limit(1);
+
+  if (testError) {
+    console.error("Supabase connection failed:", testError.message);
+    console.error("Code:", testError.code);
+    process.exit(1);
+  }
+
+  console.log("Supabase connection OK");
 
   const { data: sites, error } = await supabase
     .from("sites")
@@ -156,8 +176,6 @@ async function main() {
 
   console.log(`Sites to check: ${sites.length}`);
 
-  // Check sites one at a time (not all in parallel) to avoid
-  // hammering the GitHub Actions runner memory or external APIs.
   for (const site of sites) {
     await checkOneSite(site);
   }
@@ -167,5 +185,6 @@ async function main() {
 
 main().catch((err) => {
   console.error("Monitor crashed:", err.message);
+  console.error(err.stack);
   process.exit(1);
 });
