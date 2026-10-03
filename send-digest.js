@@ -5,7 +5,7 @@
 import "dotenv/config";
 import { Resend } from "resend";
 import { supabase } from "./supabase-client.js";
-import { getScoreHistory, buildSummary } from "./digest-summary.js";
+import { getScoreHistory, getRecentIncidents, buildSummary } from "./digest-summary.js";
 import { renderEmailHtml } from "./email-template.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -24,15 +24,18 @@ async function sendDigestForSite(site) {
     return;
   }
 
-  const summary = buildSummary(history);
+  const incidents = await getRecentIncidents(site.id);
+  const summary = buildSummary(history, incidents);
   const html = renderEmailHtml(site, summary);
 
   const { error } = await resend.emails.send({
     from: "PromptHall Monitor <monitor@prompthall.space>",
     to: recipient,
-    subject: summary.isRegression
-      ? `⚠️ ${site.url} — something broke this week`
-      : `${site.url} — weekly report (${summary.score}/100)`,
+    subject: summary.isFirstReport
+      ? `${site.name || site.url} — your first PromptHall report (${summary.score}/100)`
+      : summary.isRegression
+        ? `⚠️ ${site.name || site.url} — needs attention this week`
+        : `${site.name || site.url} — weekly report (${summary.score}/100)`,
     html,
   });
 
@@ -48,7 +51,7 @@ async function main() {
     throw new Error("Missing RESEND_API_KEY in .env");
   }
 
-  const { data: sites, error } = await supabase.from("sites").select("id, url, owner_email");
+  const { data: sites, error } = await supabase.from("sites").select("id, url, name, owner_email");
   if (error) throw new Error(`Failed to load sites: ${error.message}`);
   if (!sites || sites.length === 0) {
     console.log("No sites to report on.");

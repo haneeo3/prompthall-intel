@@ -21,6 +21,47 @@ export async function getScoreHistory(siteId) {
   return data; // newest first
 }
 
+// Incidents that were open at any point in the last `days` days.
+export async function getRecentIncidents(siteId, days = 7) {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("incidents")
+    .select("page_url, type, status_code, error_type, detected_at, resolved_at")
+    .eq("site_id", siteId)
+    .or(`resolved_at.is.null,resolved_at.gte.${since}`)
+    .order("detected_at", { ascending: false });
+
+  if (error) {
+    // The digest must still go out if the incidents table is unavailable.
+    console.error(`Could not load incidents for site ${siteId}: ${error.message}`);
+    return [];
+  }
+  return data || [];
+}
+
+export function formatDuration(ms) {
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "under a minute";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"}${mins ? ` ${mins} min` : ""}`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"}${hours % 24 ? ` ${hours % 24} h` : ""}`;
+}
+
+function summariseIncidents(incidents) {
+  const now = Date.now();
+  const items = incidents.map((i) => {
+    const start = new Date(i.detected_at).getTime();
+    const end = i.resolved_at ? new Date(i.resolved_at).getTime() : now;
+    const durationMs = Math.max(0, end - start);
+    return { ...i, durationMs, durationText: formatDuration(durationMs), open: !i.resolved_at };
+  });
+  const totalMs = items.reduce((sum, i) => sum + i.durationMs, 0);
+  return { items, totalDowntimeText: items.length ? formatDuration(totalMs) : null, openCount: items.filter((i) => i.open).length };
+}
+
 // One-line recommendation per broken or slow page.
 function pageRecommendation(page) {
   if (!page.ok) {
@@ -73,8 +114,10 @@ function buildTrendLine(history) {
   return null;
 }
 
-export function buildSummary(history) {
+export function buildSummary(history, incidents = []) {
   const [latest, previous] = history;
+  const isFirstReport = !previous;
+  const week = summariseIncidents(incidents);
   const score = latest.performance_score;
   const pagesReport = latest.pages_report || [];
   const brokenPages = pagesReport.filter((p) => !p.ok);
@@ -97,10 +140,19 @@ export function buildSummary(history) {
     if (brokenPages.length > prevBrokenCount) isRegression = true;
   }
 
+  if (week.openCount > 0) isRegression = true;
+
   const trendLine = buildTrendLine(history);
 
   const bullets = [weekOverWeekLine];
   if (trendLine) bullets.push(trendLine);
+  if (!isFirstReport) {
+    bullets.push(
+      week.items.length === 0
+        ? "No outages detected this week."
+        : `${week.items.length} outage${week.items.length === 1 ? "" : "s"} this week, ${week.totalDowntimeText} of downtime in total${week.openCount ? ` (${week.openCount} still unresolved)` : ""}.`
+    );
+  }
   bullets.push(`Pages checked: ${latest.pages_checked ?? pagesReport.length}`);
   bullets.push(`Broken pages: ${brokenPages.length}  •  Slow pages: ${slowPages.length}`);
   bullets.push(`Homepage LCP: ${latest.lcp}  •  CLS: ${latest.cls}  •  TBT: ${latest.tbt}`);
@@ -117,5 +169,16 @@ export function buildSummary(history) {
       ? [...pageRecommendations, ...(perfRecommendation ? [perfRecommendation] : [])]
       : ["No major issues detected this week, keep an eye on next week's report."];
 
-  return { score, bullets, isRegression, recommendations, brokenPages, slowPages };
+  return {
+    score,
+    bullets,
+    isRegression,
+    isFirstReport,
+    recommendations,
+    brokenPages,
+    slowPages,
+    latest,
+    incidents: week.items,
+    totalDowntimeText: week.totalDowntimeText,
+  };
 }

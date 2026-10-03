@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PromptHall Intel : Add Your Site</title>
+<title>PromptHall Monitor : Start monitoring your site</title>
 <style>
   :root {
     --blue: #1A6BFF;
@@ -49,15 +49,18 @@
     margin-bottom: 6px;
     margin-top: 16px;
   }
-  input {
+  input, textarea {
     width: 100%;
+    font-family: inherit;
     padding: 12px 14px;
     border: 1px solid #E2E8F0;
     border-radius: 8px;
     font-size: 14px;
     color: var(--navy);
   }
-  input:focus {
+  textarea { resize: vertical; min-height: 78px; }
+  .hint { font-size: 12px; color: var(--grey); margin: 6px 0 0; line-height: 1.4; }
+  input:focus, textarea:focus {
     outline: none;
     border-color: var(--blue);
   }
@@ -90,17 +93,21 @@
 
 <div class="card">
   <h1>Start monitoring your site</h1>
-  <p class="sub">We'll check your site right now, speed, uptime, and broken pages, and email you the results in a couple of minutes.</p>
+  <p class="sub">We check your site every 5 minutes and email you within minutes if a page goes down, with a plain-English explanation and the details your developer needs. You'll also get a report every Monday. Your first report arrives in about a minute.</p>
 
   <form id="signup-form">
-    <label for="url">Website URL</label> <input type="url" id="url" placeholder="https://yourwebsite.com" required />
-    
+    <label for="url">Website URL</label>
+    <input type="url" id="url" placeholder="https://yourwebsite.com" required />
 
     <label for="email">Your email</label>
     <input type="email" id="email" placeholder="you@gmail.com" required />
 
     <label for="name">Business name (optional)</label>
     <input type="text" id="name" placeholder="Your Business" />
+
+    <label for="pages">Pages that matter most (optional)</label>
+    <textarea id="pages" placeholder="/contact&#10;/book&#10;/checkout"></textarea>
+    <p class="hint">One per line, e.g. your contact, booking or checkout page. We check these first and tell you what an outage means for your business.</p>
 
     <button type="submit" id="submit-btn">Start Monitoring</button>
   </form>
@@ -123,12 +130,16 @@
     const url = document.getElementById("url").value.trim();
     const email = document.getElementById("email").value.trim();
     const name = document.getElementById("name").value.trim() || null;
+    const important_pages = document.getElementById("pages").value
+      .split(/[,;]|[^ -~]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
 
     try {
       const res = await fetch("/api/add-site", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, email, name }),
+        body: JSON.stringify({ url, email, name, important_pages }),
       });
 
       const data = await res.json();
@@ -137,11 +148,13 @@
         throw new Error(data.error || "Something went wrong");
       }
 
-      messageEl.textContent = `Done! Your site scored ${data.score}/100. Check your email for the full report.`;
+      messageEl.textContent = data.updated
+        ? `Updated! Your site scored ${data.score}/100. We've emailed you a fresh report.`
+        : `Done! Your site scored ${data.score}/100. Check your email for the full report. We're now watching it every 5 minutes.`;
       messageEl.className = "success";
       form.reset();
     } catch (err) {
-      messageEl.textContent = "Something went wrong, please try again.";
+      messageEl.textContent = err.message || "Something went wrong, please try again.";
       messageEl.className = "error";
     } finally {
       submitBtn.disabled = false;
