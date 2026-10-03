@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>PromptHall Monitor : Admin</title>
+<style>
+  :root { --blue:#1A6BFF; --navy:#111A3C; --grey:#6B7280; --offwhite:#F5F7FC; --green:#15803D; --red:#B91C1C; --amber:#B45309; --line:#E5E7EB; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--offwhite); margin: 0; color: var(--navy); }
+  header { background: #fff; border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .brand { font-size: 12px; font-weight: 600; color: #6366F1; letter-spacing: 1px; }
+  header .right { margin-left: auto; font-size: 12px; color: var(--grey); display: flex; gap: 12px; align-items: center; }
+  main { padding: 20px 24px; max-width: 1300px; margin: 0 auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .card .k { font-size: 12px; color: var(--grey); }
+  .card .v { font-size: 26px; font-weight: 700; margin-top: 4px; }
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  input[type=search], input[type=password] { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; min-width: 260px; }
+  select { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; background: #fff; }
+  button { background: var(--blue); color: #fff; border: 0; border-radius: 8px; padding: 9px 14px; font-size: 14px; cursor: pointer; }
+  button.ghost { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--grey); background: #FAFBFF; cursor: pointer; user-select: none; }
+  tbody tr { cursor: pointer; } tbody tr:hover { background: #F8FAFF; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .up { background: var(--green); } .down { background: var(--red); } .warn { background: var(--amber); } .unknown { background: #9CA3AF; }
+  .muted { color: var(--grey); } .mono { font-family: Menlo, Consolas, monospace; font-size: 12px; }
+  .site a { color: var(--navy); text-decoration: none; font-weight: 600; } .site .url { font-size: 12px; color: var(--grey); }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill.red { background: #FEE2E2; color: var(--red); } .pill.green { background: #DCFCE7; color: var(--green); } .pill.amber { background: #FEF3C7; color: var(--amber); } .pill.grey { background: #F3F4F6; color: var(--grey); }
+  .strip { display: flex; gap: 1px; height: 14px; } .strip i { flex: 1; border-radius: 1px; background: #E5E7EB; min-width: 2px; }
+  .strip i.ok { background: #86EFAC; } .strip i.bad { background: #F87171; }
+  #detail { margin-top: 24px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: none; }
+  #detail h2 { margin: 0 0 4px; font-size: 18px; } #detail h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--grey); margin: 22px 0 8px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; } @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  svg.chart { width: 100%; height: 120px; background: #FAFBFF; border: 1px solid var(--line); border-radius: 8px; }
+  #login { max-width: 380px; margin: 80px auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 28px; display: none; }
+  #login p { color: var(--grey); font-size: 14px; } #login input { width: 100%; margin: 8px 0 12px; }
+  .err { color: var(--red); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">PROMPTHALL.SPACE</span>
+  <h1>Monitor admin</h1>
+  <div class="right"><span id="updated"></span><button class="ghost" id="refresh">Refresh</button><button class="ghost" id="logout">Log out</button></div>
+</header>
+
+<div id="login">
+  <h2 style="margin:0 0 6px;font-size:18px;">Admin access</h2>
+  <p>Enter the admin password to view all monitored sites.</p>
+  <input type="password" id="token" placeholder="Admin password" />
+  <button id="login-btn">Open dashboard</button>
+  <p class="err" id="login-err"></p>
+</div>
+
+<main id="app" style="display:none;">
+  <div class="cards">
+    <div class="card"><div class="k">Sites</div><div class="v" id="c-sites">-</div></div>
+    <div class="card"><div class="k">Up now</div><div class="v" id="c-up" style="color:var(--green)">-</div></div>
+    <div class="card"><div class="k">Down now</div><div class="v" id="c-down" style="color:var(--red)">-</div></div>
+    <div class="card"><div class="k">Open incidents</div><div class="v" id="c-inc">-</div></div>
+    <div class="card"><div class="k">Avg uptime (7d)</div><div class="v" id="c-uptime">-</div></div>
+    <div class="card"><div class="k">Owners</div><div class="v" id="c-owners">-</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Search site, name or owner email" />
+    <select id="filter"><option value="all">All sites</option><option value="down">Down now</option><option value="issues">With open incidents</option><option value="stale">Not checked in 15 min</option></select>
+    <span class="muted" id="count"></span>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th data-sort="status">Status</th><th data-sort="name">Site</th><th data-sort="owner_email">Owner</th>
+      <th data-sort="uptime">Uptime 7d</th><th>Last 24h</th><th data-sort="last_response_ms">Response</th>
+      <th data-sort="last_pages_broken">Broken pages</th><th data-sort="open_incidents">Incidents</th>
+      <th data-sort="last_score">Score</th><th data-sort="last_checked_at">Last check</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <section id="detail"></section>
+</main>
+
+<script>
+  const TZ = "Africa/Lagos";
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  const fmt = (iso, opts = {}) => iso ? new Date(iso).toLocaleString("en-NG", { timeZone: TZ, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", ...opts }) : "-";
+  const ago = (iso) => {
+    if (!iso) return "never";
+    const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (m < 1) return "just now"; if (m < 60) return `${m} min ago`;
+    const h = Math.floor(m / 60); if (h < 48) return `${h} h ${m % 60} min ago`;
+    return `${Math.floor(h / 24)} days ago`;
+  };
+  const dur = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); if (m < 1) return "under 1 min"; if (m < 60) return `${m} min`; const h = Math.floor(m / 60); return h < 24 ? `${h} h ${m % 60} min` : `${Math.floor(h / 24)} d ${h % 24} h`; };
+  const pct = (ok, total) => total ? (100 * ok / total).toFixed(total > 200 ? 2 : 1) + "%" : "-";
+  const STALE_MIN = 15;
+
+  let token = localStorage.getItem("ph_admin_token") || "";
+  let sites = [], sortKey = "status", sortDir = 1, timer = null, openSite = null;
+
+  async function api(params = "") {
+    const res = await fetch("/api/admin-data" + params, { headers: { Authorization: "Bearer " + token } });
+    if (res.status === 401) throw Object.assign(new Error("Wrong password"), { auth: true });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    return res.json();
+  }
+
+  function statusOf(s) {
+    if (!s.last_checked_at) return "unknown";
+    if ((Date.now() - new Date(s.last_checked_at).getTime()) / 60000 > STALE_MIN) return "unknown";
+    if (!s.last_homepage_ok) return "down";
+    if ((s.last_pages_broken || 0) > 0 || (s.open_incidents || 0) > 0) return "warn";
+    return "up";
+  }
+  const statusLabel = { up: "Up", down: "DOWN", warn: "Issues", unknown: "No recent check" };
+  const statusRank = { down: 0, warn: 1, unknown: 2, up: 3 };
+
+  function renderCards() {
+    const st = sites.map(statusOf);
+    $("c-sites").textContent = sites.length;
+    $("c-up").textContent = st.filter((x) => x === "up" || x === "warn").length;
+    $("c-down").textContent = st.filter((x) => x === "down").length;
+    $("c-inc").textContent = sites.reduce((n, s) => n + (s.open_incidents || 0), 0);
+    const ok = sites.reduce((n, s) => n + (s.ok_7d || 0), 0), tot = sites.reduce((n, s) => n + (s.checks_7d || 0), 0);
+    $("c-uptime").textContent = pct(ok, tot);
+    $("c-owners").textContent = new Set(sites.map((s) => (s.owner_email || "").toLowerCase()).filter(Boolean)).size;
+  }
+
+  function sortValue(s, key) {
+    if (key === "status") return statusRank[statusOf(s)];
+    if (key === "uptime") return s.checks_7d ? s.ok_7d / s.checks_7d : -1;
+    if (key === "name") return (s.name || s.url).toLowerCase();
+    const v = s[key]; return v == null ? -Infinity : (typeof v === "string" ? v.toLowerCase() : v);
+  }
+
+  function visibleSites() {
+    const q = $("q").value.trim().toLowerCase(), f = $("filter").value;
+    return sites
+      .filter((s) => !q || [s.url, s.name, s.owner_email].some((x) => (x || "").toLowerCase().includes(q)))
+      .filter((s) => f === "all" || (f === "down" && statusOf(s) === "down") || (f === "issues" && s.open_incidents > 0) || (f === "stale" && statusOf(s) === "unknown"))
+      .sort((a, b) => { const x = sortValue(a, sortKey), y = sortValue(b, sortKey); return (x < y ? -1 : x > y ? 1 : 0) * sortDir || (a.url < b.url ? -1 : 1); });
+  }
+
+  function renderTable() {
+    const list = visibleSites();
+    $("count").textContent = `${list.length} of ${sites.length}`;
+    $("rows").innerHTML = list.map((s) => {
+      const st = statusOf(s);
+      const score = s.last_score == null ? '<span class="muted">-</span>' : `<span class="pill ${s.last_score >= 90 ? "green" : s.last_score >= 50 ? "amber" : "red"}">${s.last_score}</span>`;
+      const inc = s.open_incidents ? `<span class="pill red">${s.open_incidents} open</span>` : s.incidents_7d ? `<span class="pill grey">${s.incidents_7d} this week</span>` : '<span class="muted">0</span>';
+      return `<tr data-id="${esc(s.id)}">
+        <td><span class="dot ${st}"></span>${statusLabel[st]}</td>
+        <td class="site"><a href="${esc(s.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(s.name || "-")}</a><div class="url">${esc(s.url)}</div></td>
+        <td class="mono">${esc(s.owner_email || "-")}</td>
+        <td>${pct(s.ok_7d, s.checks_7d)}<div class="muted" style="font-size:11px">${s.checks_7d || 0} checks</div></td>
+        <td style="min-width:120px"><div class="strip" title="Last 24h, oldest to newest">${(s.strip_24h || "").slice(-96).split("").map((c) => `<i class="${c === "1" ? "ok" : "bad"}"></i>`).join("") || "<i></i>"}</div></td>
+        <td>${s.last_response_ms == null ? "-" : s.last_response_ms + " ms"}<div class="muted" style="font-size:11px">avg ${s.avg_response_ms_7d == null ? "-" : s.avg_response_ms_7d + " ms"}</div></td>
+        <td>${s.last_pages_broken ? `<span class="pill red">${s.last_pages_broken} / ${s.last_pages_checked}</span>` : `<span class="muted">0 / ${s.last_pages_checked ?? "-"}</span>`}</td>
+        <td>${inc}</td>
+        <td>${score}</td>
+        <td title="${esc(fmt(s.last_checked_at, { second: "2-digit" }))}">${ago(s.last_checked_at)}</td>
+      </tr>`;
+    }).join("");
+    document.querySelectorAll("#rows tr").forEach((tr) => tr.addEventListener("click", () => openDetail(tr.dataset.id)));
+  }
+
+  // Response-time chart for the last 24h as a simple inline SVG.
+  function chartSvg(checks) {
+    const pts = checks.filter((c) => Date.now() - new Date(c.checked_at).getTime() < 24 * 3600 * 1000).slice().reverse();
+    if (pts.length < 2) return '<p class="muted">Not enough checks in the last 24 hours yet.</p>';
+    const W = 800, H = 120, pad = 6;
+    const max = Math.max(1000, ...pts.map((c) => c.homepage_response_ms || 0));
+    const x = (i) => pad + (i / (pts.length - 1)) * (W - 2 * pad);
+    const y = (v) => H - pad - ((v || 0) / max) * (H - 2 * pad);
+    const line = pts.map((c, i) => `${x(i).toFixed(1)},${y(c.homepage_response_ms).toFixed(1)}`).join(" ");
+    const downs = pts.map((c, i) => c.homepage_ok ? "" : `<rect x="${(x(i) - 2).toFixed(1)}" y="0" width="4" height="${H}" fill="#FCA5A5" opacity="0.7"/>`).join("");
+    const grid = [1000, 3000].filter((v) => v < max).map((v) => `<line x1="0" x2="${W}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="#E5E7EB" stroke-dasharray="4 4"/><text x="4" y="${(y(v) - 3).toFixed(1)}" font-size="10" fill="#9CA3AF">${v / 1000}s</text>`).join("");
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${downs}${grid}<polyline points="${line}" fill="none" stroke="#1A6BFF" stroke-width="1.5"/></svg>
+      <p class="muted" style="font-size:11px;margin:4px 0 0">Homepage response time, last 24h (red bars = down). Max ${max} ms.</p>`;
+  }
+
+  async function openDetail(id) {
+    openSite = id;
+    const box = $("detail"); box.style.display = "block"; box.innerHTML = '<p class="muted">Loading...</p>';
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+    try {
+      const d = await api("?site=" + id);
+      const s = d.site, inc = d.incidents, open = inc.filter((i) => !i.resolved_at);
+      const ok7 = d.checks.filter((c) => c.homepage_ok).length;
+      const pagesHtml = d.pages.length ? d.pages.map((p) => `<tr><td><span class="dot ${p.ok ? (p.slow ? "warn" : "up") : "down"}"></span>${p.ok ? (p.slow ? "Slow" : "OK") : "Broken"}</td><td class="mono" style="word-break:break-all">${esc(p.url)}${p.flaky ? ' <span class="pill amber">flaky</span>' : ""}</td><td>${p.status ?? esc(p.errorType || "no response")}</td><td>${p.responseTimeMs ?? "-"} ms</td></tr>`).join("") : '<tr><td colspan="4" class="muted">No check yet</td></tr>';
+      const incHtml = inc.length ? inc.map((i) => {
+        const end = i.resolved_at ? new Date(i.resolved_at) : new Date();
+        const tech = i.technical_details || {};
+        return `<tr><td><span class="pill ${i.resolved_at ? "grey" : "red"}">${i.resolved_at ? "resolved" : "OPEN"}</span></td>
+          <td class="mono" style="word-break:break-all">${esc(i.page_url)}</td>
+          <td>${esc(i.error_type || i.type)}${i.status_code ? " " + i.status_code : ""}${tech.error ? `<div class="muted" style="font-size:11px">${esc(tech.error)}</div>` : ""}</td>
+          <td>${fmt(i.detected_at)}</td><td>${i.resolved_at ? fmt(i.resolved_at) : "-"}</td><td>${dur(end - new Date(i.detected_at))}</td></tr>`;
+      }).join("") : '<tr><td colspan="6" class="muted">No incidents recorded</td></tr>';
+      const scoresHtml = d.scores.length ? d.scores.map((x) => `<tr><td>${fmt(x.checked_at)}</td><td><span class="pill ${x.performance_score >= 90 ? "green" : x.performance_score >= 50 ? "amber" : "red"}">${x.performance_score}</span></td><td>${esc(x.lcp)}</td><td>${esc(x.cls)}</td><td>${esc(x.tbt)}</td><td>${x.pages_checked ?? "-"} / ${x.pages_broken_count ?? 0} broken / ${x.pages_slow_count ?? 0} slow</td></tr>`).join("") : '<tr><td colspan="6" class="muted">No PageSpeed scores yet</td></tr>';
+
+      box.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div><h2>${esc(s.name || s.url)}</h2><div class="muted"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a> &nbsp;|&nbsp; ${esc(s.owner_email || "no email")} &nbsp;|&nbsp; added ${fmt(s.added_at, { year: "numeric" })}</div></div>
+          <button class="ghost" style="margin-left:auto" onclick="document.getElementById('detail').style.display='none'">Close</button>
+        </div>
+        <div class="cards" style="margin-top:16px">
+          <div class="card"><div class="k">Status now</div><div class="v" style="font-size:18px">${open.length ? `<span class="dot down"></span>${open.length} open incident${open.length > 1 ? "s" : ""}` : '<span class="dot up"></span>All pages up'}</div></div>
+          <div class="card"><div class="k">Uptime 7d</div><div class="v">${pct(ok7, d.checks.length)}</div></div>
+          <div class="card"><div class="k">Checks 7d</div><div class="v">${d.checks.length}</div></div>
+          <div class="card"><div class="k">Incidents total</div><div class="v">${inc.length}</div></div>
+          <div class="card"><div class="k">Last check</div><div class="v" style="font-size:18px">${ago(d.lastCheckedAt)}</div></div>
+          <div class="card"><div class="k">Important pages</div><div class="v" style="font-size:13px;font-weight:400" class="mono">${(s.important_pages || []).map(esc).join("<br>") || '<span class="muted">none set</span>'}</div></div>
+        </div>
+        <h3>Response time, last 24h</h3>${chartSvg(d.checks)}
+        <div class="grid2">
+          <div><h3>Pages (last check, ${fmt(d.lastCheckedAt)})</h3>
+            <table><thead><tr><th>State</th><th>Page</th><th>Status</th><th>Time</th></tr></thead><tbody>${pagesHtml}</tbody></table></div>
+          <div><h3>PageSpeed history (weekly)</h3>
+            <table><thead><tr><th>When</th><th>Score</th><th>LCP</th><th>CLS</th><th>TBT</th><th>Pages</th></tr></thead><tbody>${scoresHtml}</tbody></table></div>
+        </div>
+        <h3>Incident history</h3>
+        <table><thead><tr><th>State</th><th>Page</th><th>Error</th><th>Detected</th><th>Resolved</th><th>Duration</th></tr></thead><tbody>${incHtml}</tbody></table>`;
+    } catch (err) {
+      box.innerHTML = `<p class="err">${esc(err.message)}</p>`;
+    }
+  }
+
+  async function load() {
+    try {
+      const d = await api();
+      sites = d.sites;
+      $("login").style.display = "none"; $("app").style.display = "block";
+      $("updated").textContent = "Updated " + fmt(d.generatedAt, { second: "2-digit" }) + " WAT";
+      renderCards(); renderTable();
+      if (openSite) openDetail(openSite);
+    } catch (err) {
+      if (err.auth) { localStorage.removeItem("ph_admin_token"); token = ""; showLogin("Wrong password."); }
+      else $("updated").textContent = "Error: " + err.message;
+    }
+  }
+
+  function showLogin(msg = "") { $("app").style.display = "none"; $("login").style.display = "block"; $("login-err").textContent = msg; $("token").focus(); }
+
+  $("login-btn").addEventListener("click", () => { token = $("token").value.trim(); if (!token) return; localStorage.setItem("ph_admin_token", token); load(); });
+  $("token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("login-btn").click(); });
+  $("refresh").addEventListener("click", load);
+  $("logout").addEventListener("click", () => { localStorage.removeItem("ph_admin_token"); token = ""; showLogin(); });
+  $("q").addEventListener("input", renderTable);
+  $("filter").addEventListener("change", renderTable);
+  document.querySelectorAll("th[data-sort]").forEach((th) => th.addEventListener("click", () => { const k = th.dataset.sort; sortDir = sortKey === k ? -sortDir : 1; sortKey = k; renderTable(); }));
+
+  if (token) load(); else showLogin();
+  timer = setInterval(() => { if (token) load(); }, 60000);
+</script>
+</body>
+</html>
