@@ -2,14 +2,22 @@ name: PromptHall Monitor
 
 on:
   schedule:
-    # Hourly uptime + page checks (every hour, on the hour)
-    - cron: "0 * * * *"
+    # Uptime + page checks every 5 minutes (GitHub's minimum interval)
+    - cron: "*/5 * * * *"
+    # Weekly performance check + digest emails (Mondays 07:00 UTC)
+    - cron: "0 7 * * 1"
   workflow_dispatch: {}
 
+# Never run two checks of the same kind at once; queue the next one instead.
+concurrency:
+  group: prompthall-monitor-${{ github.event.schedule || github.event_name }}
+  cancel-in-progress: false
+
 jobs:
-  hourly-check:
+  uptime-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    if: github.event.schedule == '*/5 * * * *' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repo
@@ -24,12 +32,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run hourly monitor
-        run: node hourly-monitor.js
+      - name: Run uptime monitor
+        run: node uptime-monitor.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
 
   # Weekly full performance check runs separately on Monday mornings.
   # This keeps PageSpeed API calls to once a week per site (free tier: 25k/day,

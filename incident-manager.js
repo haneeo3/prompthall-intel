@@ -46,7 +46,7 @@ async function handlePageDown(site, page) {
   const description = friendlyDescription(page);
   const recommendation = friendlyRecommendation(page);
 
-  const { data: incident } = await supabase
+  const { error: insertError } = await supabase
     .from("incidents")
     .insert({
       site_id: site.id,
@@ -55,9 +55,28 @@ async function handlePageDown(site, page) {
       severity: page.status === null ? "critical" : "warning",
       description,
       recommendation,
-    })
-    .select()
-    .single();
+      // Technical facts for developers; same data shown in the email.
+      status_code: page.status,
+      error_type: page.errorType || null,
+      response_time_ms: page.responseTimeMs ?? null,
+      technical_details: {
+        checked_at: page.checkedAt || null,
+        final_url: page.finalUrl || null,
+        error: page.error || null,
+        error_code: page.errorCode || null,
+        server: page.server || null,
+        content_type: page.contentType || null,
+        body_snippet: page.bodySnippet || null,
+        checks_failed: page.confirmed ? 2 : 1,
+      },
+    });
+
+  if (insertError) {
+    // Don't alert if we couldn't record the incident, otherwise the same
+    // email would be re-sent on every run. The next run will retry.
+    console.error(`  [incident] failed to record incident for ${page.url}: ${insertError.message}`);
+    return;
+  }
 
   console.log(`  [incident] opened for ${page.url} (${page.status ?? "no response"})`);
 
@@ -88,16 +107,24 @@ async function handlePageRecovered(site, page) {
   const durationMs = resolvedAt - detectedAt;
   const durationText = formatDuration(durationMs);
 
-  await supabase
+  const { error: updateError } = await supabase
     .from("incidents")
     .update({ resolved_at: resolvedAt.toISOString() })
     .eq("id", existing.id);
+
+  if (updateError) {
+    console.error(`  [incident] failed to close incident for ${page.url}: ${updateError.message}`);
+    return;
+  }
 
   console.log(`  [incident] resolved for ${page.url} (was down ${durationText})`);
 
   // Send one recovery alert.
   if (site.owner_email) {
-    await sendRecoveryAlert(site, page, durationText);
+    await sendRecoveryAlert(site, page, durationText, {
+      detectedAt: detectedAt.toISOString(),
+      resolvedAt: resolvedAt.toISOString(),
+    });
   }
 }
 

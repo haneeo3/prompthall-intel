@@ -34,7 +34,7 @@ async function main() {
 
   if (error) throw new Error(`Failed to load sites: ${error.message}`);
   if (!sites || sites.length === 0) {
-    console.log("No sites to check. Add one with: npm run add-site -- https://example.com");
+    console.log("No sites to check. Add one through the signup form first.");
     return;
   }
 
