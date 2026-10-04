@@ -67,6 +67,7 @@
     <div class="card"><div class="k">Open incidents</div><div class="v" id="c-inc">-</div></div>
     <div class="card"><div class="k">Avg uptime (7d)</div><div class="v" id="c-uptime">-</div></div>
     <div class="card"><div class="k">Owners</div><div class="v" id="c-owners">-</div></div>
+    <div class="card" id="c-monitor-card"><div class="k">Monitor last ran</div><div class="v" id="c-monitor" style="font-size:18px">-</div></div>
   </div>
 
   <div class="toolbar">
@@ -133,6 +134,13 @@
     const ok = sites.reduce((n, s) => n + (s.ok_7d || 0), 0), tot = sites.reduce((n, s) => n + (s.checks_7d || 0), 0);
     $("c-uptime").textContent = pct(ok, tot);
     $("c-owners").textContent = new Set(sites.map((s) => (s.owner_email || "").toLowerCase()).filter(Boolean)).size;
+    // Health of the monitor itself: newest check across all sites. Red if the
+    // 5-minute schedule has stalled (same idea as the heartbeat, visible here).
+    const newest = sites.map((s) => s.last_checked_at).filter(Boolean).sort().at(-1);
+    const stalled = !newest || (Date.now() - new Date(newest).getTime()) / 60000 > STALE_MIN;
+    $("c-monitor").innerHTML = `<span class="dot ${stalled ? "down" : "up"}"></span>${ago(newest)}`;
+    $("c-monitor-card").style.borderColor = stalled ? "var(--red)" : "var(--line)";
+    $("c-monitor-card").title = stalled ? "No run in over 15 minutes. Check cron-job.org and GitHub Actions." : "Runs every 5 minutes";
   }
 
   function sortValue(s, key) {
