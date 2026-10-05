@@ -3,165 +3,282 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PromptHall Monitor : Start monitoring your site</title>
+<title>PromptHall Monitor — Website monitoring for Nigerian businesses</title>
+<meta name="description" content="We check your website every 5 minutes and email you within minutes if a page goes down, in plain English, with the details your developer needs." />
 <style>
   :root {
-    --blue: #1A6BFF;
-    --navy: #111A3C;
-    --grey: #6B7280;
-    --offwhite: #F5F7FC;
+    --bg: #0B0A14; --bg2: #110F1F; --panel: #171429; --panel2: #1E1A33; --line: #2A2545; --line2: #3B3460;
+    --text: #EDEAFB; --muted: #9A94B8; --dim: #6C6690;
+    --purple: #7C5CFF; --purple2: #9D85FF; --purple-soft: rgba(124, 92, 255, 0.14);
+    --green: #34D399; --red: #F87171; --amber: #FBBF24;
+    --mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
-    background: var(--offwhite);
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(17, 26, 60, 0.08);
-    padding: 40px;
-    max-width: 440px;
-    width: 100%;
-  }
-  h1 {
-    font-size: 24px;
-    color: var(--navy);
-    margin: 0 0 8px;
-  }
-  p.sub {
-    color: var(--grey);
-    margin: 0 0 28px;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-  label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--navy);
-    margin-bottom: 6px;
-    margin-top: 16px;
-  }
-  input, textarea {
-    width: 100%;
-    font-family: inherit;
-    padding: 12px 14px;
-    border: 1px solid #E2E8F0;
-    border-radius: 8px;
-    font-size: 14px;
-    color: var(--navy);
-  }
-  textarea { resize: vertical; min-height: 78px; }
-  .hint { font-size: 12px; color: var(--grey); margin: 6px 0 0; line-height: 1.4; }
-  input:focus, textarea:focus {
-    outline: none;
-    border-color: var(--blue);
-  }
-  button {
-    width: 100%;
-    background: var(--blue);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 600;
-    margin-top: 24px;
-    cursor: pointer;
-  }
-  button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  #message {
-    margin-top: 16px;
-    font-size: 14px;
-    text-align: center;
-  }
-  #message.success { color: #059669; }
-  #message.error { color: #DC2626; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 40px 40px; background-position: center top; }
+  body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(900px 500px at 20% -10%, rgba(124,92,255,0.22), transparent 60%), radial-gradient(700px 400px at 100% 100%, rgba(124,92,255,0.10), transparent 60%); pointer-events: none; }
+  a { color: var(--purple2); text-decoration: none; }
+
+  /* Top bar */
+  .bar { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; padding: 14px 28px; border-bottom: 1px solid var(--line); background: rgba(11,10,20,0.75); backdrop-filter: blur(8px); }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
+  .logo .mark { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--purple), #B794FF); display: grid; place-items: center; font-family: var(--mono); font-size: 13px; color: #fff; }
+  .logo small { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 4px; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg2); }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(52,211,153,0.15); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 3px rgba(52,211,153,0.12);} 50% { box-shadow: 0 0 0 7px rgba(52,211,153,0.04);} }
+  .bar .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; border: 1px solid var(--line2); background: var(--panel); color: var(--text); cursor: pointer; transition: border-color .15s, background .15s, transform .05s; }
+  .btn:hover { border-color: var(--purple); background: var(--panel2); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--purple); border-color: var(--purple); color: #fff; width: 100%; padding: 13px 16px; font-size: 15px; }
+  .btn.primary:hover { background: #8B6FFF; }
+  .btn.primary:disabled { opacity: .6; cursor: default; }
+  .btn.ghost { background: transparent; }
+
+  /* Layout */
+  main { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 48px 24px 64px; }
+  .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } .bar { padding: 12px 16px; } .status span.txt { display: none; } }
+  .eyebrow { font-family: var(--mono); font-size: 12px; color: var(--purple2); letter-spacing: 1.2px; text-transform: uppercase; margin: 0 0 12px; }
+  h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.5px; }
+  h1 em { font-style: normal; color: var(--purple2); }
+  .lead { color: var(--muted); font-size: 16px; line-height: 1.6; margin: 0 0 28px; max-width: 520px; }
+
+  /* Panel / form */
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+  .panel-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--bg2); font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .panel-head i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: var(--line2); }
+  .panel-head i:nth-child(1) { background: #FF5F57; } .panel-head i:nth-child(2) { background: #FEBC2E; } .panel-head i:nth-child(3) { background: #28C840; }
+  .panel-head .title { margin-left: 8px; }
+  .panel-body { padding: 22px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin: 16px 0 6px; }
+  label:first-child { margin-top: 0; }
+  label .opt { color: var(--dim); font-weight: 500; }
+  input, textarea { width: 100%; padding: 12px 14px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 10px; color: var(--text); font-size: 14px; font-family: var(--sans); outline: none; transition: border-color .15s, box-shadow .15s; }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
+  input:focus, textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-soft); }
+  textarea { min-height: 84px; resize: vertical; font-family: var(--mono); font-size: 13px; }
+  .hint { font-size: 12px; color: var(--dim); margin: 6px 0 0; line-height: 1.5; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+  .submit { margin-top: 22px; }
+  .fine { font-size: 12px; color: var(--dim); text-align: center; margin: 12px 0 0; }
+  .error { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.35); color: #FCA5A5; font-size: 14px; display: none; }
+
+  /* Right column: what you get */
+  .feature { display: flex; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(23,20,41,0.7); margin-bottom: 12px; }
+  .feature .ic { width: 36px; height: 36px; flex: none; border-radius: 9px; background: var(--purple-soft); border: 1px solid rgba(124,92,255,0.35); display: grid; place-items: center; font-family: var(--mono); font-size: 12px; color: var(--purple2); }
+  .feature b { display: block; font-size: 14px; margin-bottom: 3px; }
+  .feature p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .specs { margin-top: 18px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-family: var(--mono); font-size: 12px; }
+  .specs div { display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--bg2); }
+  .specs div:last-child { border-bottom: 0; }
+  .specs span:first-child { color: var(--dim); } .specs span:last-child { color: var(--text); }
+
+  /* Progress screen */
+  .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(11,10,20,0.92); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.show { display: flex; }
+  .progress { width: 100%; max-width: 520px; }
+  .progress .panel-body { padding: 26px; }
+  .progress h2 { margin: 0 0 4px; font-size: 20px; }
+  .progress .sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  .track { height: 6px; background: var(--bg2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-bottom: 22px; }
+  .track i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--purple), #B794FF); transition: width .6s ease; }
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .steps li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--line); font-size: 14px; color: var(--dim); }
+  .steps li:last-child { border-bottom: 0; }
+  .steps .n { width: 24px; height: 24px; flex: none; border-radius: 50%; border: 1px solid var(--line2); display: grid; place-items: center; font-family: var(--mono); font-size: 11px; }
+  .steps li.active { color: var(--text); } .steps li.active .n { border-color: var(--purple); color: var(--purple2); animation: spin 1.2s linear infinite; border-top-color: transparent; }
+  .steps li.done { color: var(--muted); } .steps li.done .n { background: var(--green); border-color: var(--green); color: #052; animation: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .steps .t { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .elapsed { margin-top: 18px; font-family: var(--mono); font-size: 12px; color: var(--dim); text-align: center; }
+
+  /* Result screen */
+  .score { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 2px; }
+  .score b { font-size: 56px; letter-spacing: -2px; line-height: 1; }
+  .score span { color: var(--muted); font-size: 16px; }
+  .good { color: var(--green);} .mid { color: var(--amber);} .bad { color: var(--red);}
+  .result p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .result .next { display: grid; gap: 10px; margin-top: 18px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-family: var(--mono); font-size: 11px; border: 1px solid var(--line2); color: var(--muted); }
+  footer { position: relative; z-index: 1; border-top: 1px solid var(--line); padding: 18px 28px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--dim); font-family: var(--mono); }
+  footer span:last-child { margin-left: auto; }
 </style>
 </head>
 <body>
 
-<div class="card">
-  <h1>Start monitoring your site</h1>
-  <p class="sub">We check your site every 5 minutes and email you within minutes if a page goes down, with a plain-English explanation and the details your developer needs. You'll also get a report every Monday. Your first report arrives in about a minute.</p>
+<header class="bar">
+  <div class="logo"><span class="mark">PH</span>PromptHall <small>Monitor</small></div>
+  <div class="status"><span class="dot"></span><span class="txt">Checks every 5 min · Lagos time</span></div>
+  <div class="right">
+    <a class="btn ghost" href="https://prompthall.space">prompthall.space</a>
+    <a class="btn" href="/admin.html" id="admin-link">Admin</a>
+  </div>
+</header>
 
-  <form id="signup-form">
-    <label for="url">Website URL</label>
-    <input type="url" id="url" placeholder="https://yourwebsite.com" required />
+<main>
+  <div class="grid">
+    <section>
+      <p class="eyebrow">Website monitoring</p>
+      <h1>Know the moment your website <em>goes down.</em></h1>
+      <p class="lead">We check your site every 5 minutes. If a page breaks, you get a plain-English email within minutes that says what happened, what it means for your business, and exactly what to tell your developer. Plus a report every Monday.</p>
 
-    <label for="email">Your email</label>
-    <input type="email" id="email" placeholder="you@gmail.com" required />
+      <div class="panel">
+        <div class="panel-head"><i></i><i></i><i></i><span class="title">new-site — first check runs immediately</span></div>
+        <form class="panel-body" id="signup-form" novalidate>
+          <label for="url">Website address</label>
+          <input type="url" id="url" placeholder="https://yourbusiness.com" required autocomplete="url" inputmode="url" />
 
-    <label for="name">Business name (optional)</label>
-    <input type="text" id="name" placeholder="Your Business" />
+          <div class="row2">
+            <div>
+              <label for="email">Your email</label>
+              <input type="email" id="email" placeholder="you@business.com" required autocomplete="email" />
+            </div>
+            <div>
+              <label for="name">Business name <span class="opt">(optional)</span></label>
+              <input type="text" id="name" placeholder="Lagos Bakery" autocomplete="organization" />
+            </div>
+          </div>
 
-    <label for="pages">Pages that matter most (optional)</label>
-    <textarea id="pages" placeholder="/contact&#10;/book&#10;/checkout"></textarea>
-    <p class="hint">One per line, e.g. your contact, booking or checkout page. We check these first and tell you what an outage means for your business.</p>
+          <label for="pages">Pages that matter most <span class="opt">(optional)</span></label>
+          <textarea id="pages" placeholder="/contact&#10;/book&#10;/checkout"></textarea>
+          <p class="hint">One per line. Your contact, booking or checkout page. We check these first and tell you what an outage means for your business.</p>
 
-    <button type="submit" id="submit-btn">Start Monitoring</button>
-  </form>
+          <div class="submit"><button type="submit" class="btn primary" id="submit-btn">Start monitoring →</button></div>
+          <p class="fine">Free. No card. Your first report lands in your inbox in about a minute.</p>
+          <div class="error" id="error"></div>
+        </form>
+      </div>
+    </section>
 
-  <div id="message"></div>
+    <aside>
+      <div class="feature"><div class="ic">5m</div><div><b>Checked every 5 minutes</b><p>Homepage, your important pages and up to 10 more we find on your site. A problem must show up twice, 30 seconds apart, before we alert you — no false alarms.</p></div></div>
+      <div class="feature"><div class="ic">@</div><div><b>Plain-English alerts</b><p>"Your booking page is down. Customers cannot book right now." One email when it breaks, one when it's fixed. Nothing in between.</p></div></div>
+      <div class="feature"><div class="ic">&lt;/&gt;</div><div><b>Developer details included</b><p>Status code, error type, server header, response time and a ready-to-run test command at the bottom of every alert. Forward it and your developer can start fixing.</p></div></div>
+      <div class="feature"><div class="ic">Mo</div><div><b>Monday report</b><p>Speed score, what changed, every outage of the week and total downtime — in one email, every Monday at 8am.</p></div></div>
+      <div class="specs">
+        <div><span>check interval</span><span>5 min</span></div>
+        <div><span>alert delay</span><span>≈ 5–7 min</span></div>
+        <div><span>pages per site</span><span>up to 12</span></div>
+        <div><span>confirmation</span><span>2 checks, 30 s apart</span></div>
+        <div><span>timezone</span><span>Africa/Lagos (WAT)</span></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer><span>PromptHall Monitor</span><span>Your website. Our watch.</span><span><a href="/admin.html">Admin</a></span></footer>
+
+<!-- Progress / result overlay -->
+<div class="overlay" id="overlay" role="dialog" aria-live="polite">
+  <div class="panel progress" id="progress-panel">
+    <div class="panel-head"><i></i><i></i><i></i><span class="title" id="ov-title">first-check — running</span></div>
+    <div class="panel-body" id="ov-body">
+      <h2>Checking your website</h2>
+      <p class="sub">This takes about a minute. We run a real Google speed test and visit your pages one by one.</p>
+      <div class="track"><i id="track-fill"></i></div>
+      <ul class="steps" id="steps">
+        <li data-step="0"><span class="n">1</span>Saving your site<span class="t"></span></li>
+        <li data-step="1"><span class="n">2</span>Running Google PageSpeed test<span class="t">30–60 s</span></li>
+        <li data-step="2"><span class="n">3</span>Visiting your pages for broken links and slow responses<span class="t"></span></li>
+        <li data-step="3"><span class="n">4</span>Writing and sending your first report<span class="t"></span></li>
+      </ul>
+      <p class="elapsed" id="elapsed">0 s elapsed</p>
+    </div>
+  </div>
 </div>
 
 <script>
-  const form = document.getElementById("signup-form");
-  const messageEl = document.getElementById("message");
-  const submitBtn = document.getElementById("submit-btn");
+  const $ = (id) => document.getElementById(id);
+  const form = $("signup-form"), submitBtn = $("submit-btn"), errorEl = $("error");
+  const overlay = $("overlay"), steps = [...document.querySelectorAll("#steps li")], fill = $("track-fill"), elapsedEl = $("elapsed");
+
+  // Progress is time-based (the server does one long job), but it never reaches
+  // "done" until the server actually answers, so it stays honest.
+  const PLAN = [[0, 3], [3, 35], [35, 50], [50, 1e9]]; // step -> [startSec, endSec]
+  let startedAt = 0, timer = null;
+
+  function setStep(i) {
+    steps.forEach((li, k) => { li.classList.toggle("done", k < i); li.classList.toggle("active", k === i); });
+  }
+  function tick() {
+    const s = (Date.now() - startedAt) / 1000;
+    elapsedEl.textContent = `${Math.floor(s)} s elapsed`;
+    const i = Math.min(3, PLAN.findIndex(([a, b]) => s >= a && s < b));
+    setStep(i);
+    // Bar creeps towards 92% and waits there for the server.
+    const pct = Math.min(92, 100 * (1 - Math.exp(-s / 35)));
+    fill.style.width = pct.toFixed(1) + "%";
+    if (s > 75) steps[3].querySelector(".t").textContent = "almost there";
+  }
+  function showProgress() {
+    startedAt = Date.now();
+    overlay.classList.add("show");
+    $("ov-title").textContent = "first-check — running";
+    tick(); timer = setInterval(tick, 500);
+  }
+  function stopProgress() { clearInterval(timer); fill.style.width = "100%"; setStep(4); }
+
+  function showResult(data, email, url) {
+    const score = data.score, cls = score >= 90 ? "good" : score >= 50 ? "mid" : "bad";
+    const word = score >= 90 ? "Fast" : score >= 50 ? "Could be faster" : "Slow";
+    $("ov-title").textContent = "first-check — complete";
+    $("ov-body").innerHTML = `
+      <div class="result">
+        <span class="pill"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span> ${data.updated ? "site updated" : "monitoring started"}</span>
+        <div class="score"><b class="${cls}">${score}</b><span>/100 · ${word}</span></div>
+        <p>That's how fast <strong style="color:var(--text)">${esc(url)}</strong> loads on a phone. The full report — pages checked, what to fix, and the details for your developer — is on its way to <strong style="color:var(--text)">${esc(email)}</strong>. Check spam if it isn't there in two minutes.</p>
+        <p>From now on we check it every 5 minutes. You'll only hear from us if something breaks, when it's fixed, and every Monday morning.</p>
+        <div class="next">
+          <button class="btn primary" id="again">Add another site</button>
+          <a class="btn" href="https://prompthall.space">Back to prompthall.space</a>
+        </div>
+      </div>`;
+    $("again").addEventListener("click", () => { overlay.classList.remove("show"); form.reset(); $("url").focus(); resetOverlay(); });
+  }
+  function resetOverlay() {
+    $("ov-body").innerHTML = document.querySelector("#progress-panel").dataset.original;
+  }
+  document.querySelector("#progress-panel").dataset.original = $("ov-body").innerHTML;
+
+  const esc = (v) => String(v ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  function showError(msg) { errorEl.textContent = msg; errorEl.style.display = "block"; }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    errorEl.style.display = "none";
+    let url = $("url").value.trim();
+    const email = $("email").value.trim(), name = $("name").value.trim() || null;
+    if (url && !/^https?:[/][/]/i.test(url)) url = "https://" + url;
+    try { new URL(url); } catch { return showError("Please enter a full website address, like https://yourbusiness.com"); }
+    if (!/^[^@ ]+@[^@ ]+[.][^@ ]+$/.test(email)) return showError("Please enter a valid email address.");
+    const important_pages = $("pages").value.split(/[,;]|[^ -~]+/).map((s) => s.trim()).filter(Boolean);
+
     submitBtn.disabled = true;
-    submitBtn.textContent = "Checking your site...";
-    messageEl.textContent = "";
-    messageEl.className = "";
-
-    const url = document.getElementById("url").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const name = document.getElementById("name").value.trim() || null;
-    const important_pages = document.getElementById("pages").value
-      .split(/[,;]|[^ -~]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
+    // Re-bind the live step elements after any previous reset.
+    steps.splice(0, steps.length, ...document.querySelectorAll("#steps li"));
+    showProgress();
     try {
       const res = await fetch("/api/add-site", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, email, name, important_pages }),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Something went wrong");
-      }
-
-      messageEl.textContent = data.updated
-        ? `Updated! Your site scored ${data.score}/100. We've emailed you a fresh report.`
-        : `Done! Your site scored ${data.score}/100. Check your email for the full report. We're now watching it every 5 minutes.`;
-      messageEl.className = "success";
-      form.reset();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Something went wrong, please try again.");
+      stopProgress();
+      setTimeout(() => showResult(data, email, url), 500);
     } catch (err) {
-      messageEl.textContent = err.message || "Something went wrong, please try again.";
-      messageEl.className = "error";
+      clearInterval(timer);
+      overlay.classList.remove("show");
+      resetOverlay();
+      showError(err.message || "Something went wrong, please try again.");
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Start Monitoring";
     }
   });
 </script>
-
 </body>
 </html>
