@@ -32,10 +32,10 @@ async function sendDigestForSite(site) {
     from: "PromptHall Monitor <monitor@prompthall.space>",
     to: recipient,
     subject: summary.isFirstReport
-      ? `${site.name || site.url} — your first PromptHall report (${summary.score}/100)`
+      ? `${site.name || site.url}: your first PromptHall report (${summary.score}/100)`
       : summary.isRegression
-        ? `⚠️ ${site.name || site.url} — needs attention this week`
-        : `${site.name || site.url} — weekly report (${summary.score}/100)`,
+        ? `⚠️ ${site.name || site.url} needs attention this week`
+        : `${site.name || site.url}: weekly report (${summary.score}/100)`,
     html,
   });
 

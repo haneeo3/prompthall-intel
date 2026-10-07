@@ -11,7 +11,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 function page(title, body) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="robots" content="noindex"/><title>${esc(title)} — PromptHall</title>
+<meta name="robots" content="noindex"/><title>${esc(title)} | PromptHall</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet"/>
 <style>
   body{margin:0;background:#0E0C16;color:#F3F1FA;font-family:Inter,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
@@ -57,8 +57,8 @@ export default async function handler(req, res) {
   }
 
   return res.status(200).send(page("Stop monitoring?", `<p class="k">PromptHall · free pilot</p><h1>Stop monitoring <em>${esc(site.name || site.url)}?</em></h1>
-    <p>We'll remove <strong>${esc(site.url)}</strong> and stop all emails to <strong>${esc(site.owner_email)}</strong> — alerts, recovery notices and the Monday report. The history we recorded is deleted too.</p>
-    <p>If you only want fewer emails, reply to any PromptHall email instead and tell us — we can adjust.</p>
+    <p>We'll remove <strong>${esc(site.url)}</strong> and stop all emails to <strong>${esc(site.owner_email)}</strong>: alerts, recovery notices and the Monday report. The history we recorded is deleted too.</p>
+    <p>If you only want fewer emails, reply to any PromptHall email instead and tell us. We can adjust.</p>
     <form method="POST" action="/api/cancel?site=${encodeURIComponent(site.id)}&token=${encodeURIComponent(token)}" class="row">
       <button type="submit">Yes, stop monitoring</button>
       <a class="link" href="${APP_URL}/welcome.html">No, keep it</a>

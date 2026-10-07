@@ -131,7 +131,7 @@ export function renderIssueAlertHtml(site, page, description, recommendation) {
     ${h1(esc(description))}
     ${p(`${strong("What this means for you:")} ${esc(businessImpact(page))}`)}
     ${p(`Affected page: ${strong(esc(page.url))}`, "font-size:14px;")}
-    ${panel(`${label("What to do")}${p(esc(recommendation), "margin-bottom:8px;")}${p("You can forward this email to your web developer or hosting provider — everything they need is in the box below.", "margin-bottom:0;font-size:14px;")}`)}
+    ${panel(`${label("What to do")}${p(esc(recommendation), "margin-bottom:8px;")}${p("You can forward this email to your web developer or hosting provider. Everything they need is in the box below.", "margin-bottom:0;font-size:14px;")}`)}
     ${technicalBlockHtml(page)}
     ${small("PromptHall is still watching your website and will email you as soon as this is resolved.")}`;
   return layout(site, { preheader: `${description} We'll email you when it's resolved.`, kicker: "Alert", body });

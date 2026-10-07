@@ -62,7 +62,7 @@ export function renderEmailHtml(site, summary) {
 
     ${incidentsHtml(summary)}
 
-    ${panel(`${label("What to do")}<ul style="margin:0 0 10px;padding-left:20px;font-family:${FONT};font-size:14.5px;line-height:1.6;color:${BRAND.text};">${recs}</ul>${small("Forward this email to your web developer — everything they need is in the box below.")}`)}
+    ${panel(`${label("What to do")}<ul style="margin:0 0 10px;padding-left:20px;font-family:${FONT};font-size:14.5px;line-height:1.6;color:${BRAND.text};">${recs}</ul>${small("Forward this email to your web developer. Everything they need is in the box below.")}`)}
 
     ${technicalBlockHtml(site, summary)}
 
@@ -70,5 +70,5 @@ export function renderEmailHtml(site, summary) {
       ? "From now on we check your site every 5 minutes and email you within minutes if a page goes down, plus a report like this every Monday."
       : "We keep checking your site every 5 minutes. Your next report arrives next Monday.")}`;
 
-  return layout(site, { preheader: `${summary.score}/100 — ${scoreWord(summary.score)}. ${summary.bullets[0] || ""}`, kicker, body });
+  return layout(site, { preheader: `${summary.score}/100, ${scoreWord(summary.score)}. ${summary.bullets[0] || ""}`, kicker, body });
 }

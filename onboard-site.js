@@ -24,7 +24,7 @@ export async function onboardSite(supabase, site, { isUpdate = false } = {}) {
   await resend.emails.send({
     from: FROM,
     to: site.owner_email,
-    subject: `${site.name || site.url} — your first PromptHall report (${summary.score}/100)`,
+    subject: `${site.name || site.url}: your first PromptHall report (${summary.score}/100)`,
     html: renderEmailHtml(site, summary),
   });
   return summary;

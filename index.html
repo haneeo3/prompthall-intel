@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PromptHall Monitor — Know the moment your website goes down</title>
-<meta name="description" content="We check your website every 5 minutes and email you within minutes if a page goes down — in plain English, with the details your developer needs." />
+<title>PromptHall Monitor: Know the moment your website goes down</title>
+<meta name="description" content="We check your website every 5 minutes and email you within minutes if a page goes down, in plain English, with the details your developer needs." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
@@ -138,7 +138,7 @@
   <section class="hero">
     <p class="kicker">Website monitoring · every 5 minutes · Lagos time</p>
     <h1>Know the moment your website <em>goes down.</em></h1>
-    <p>A plain-English email within minutes of a page breaking — what happened, what it means for your business, and exactly what to tell your developer. Another when it's fixed. A report every Monday. Nothing else.</p>
+    <p>A plain-English email within minutes of a page breaking: what happened, what it means for your business, and exactly what to tell your developer. Another when it's fixed. A report every Monday. Nothing else.</p>
   </section>
 
   <div class="cols">
@@ -182,12 +182,12 @@
         <li><div><b>Monday morning report</b><p>Speed score, what changed, every outage of the week and total downtime. One email, 8am.</p></div></li>
       </ol>
       <p class="quote">"Your booking page is down. Customers cannot book right now. We've emailed your developer the details."</p>
-      <small>— the first line of an alert</small>
+      <small>The first line of an alert</small>
     </aside>
   </div>
 
   <footer>
-    <span>PromptHall Monitor — your website, our watch.</span>
+    <span>PromptHall Monitor. Your website, our watch.</span>
     <span><a href="/admin.html">Admin</a></span>
   </footer>
 </div>
@@ -273,8 +273,8 @@
       box.innerHTML = `
         <p class="kicker">First check · complete</p>
         <div class="result">
-          <div class="score"><b class="${cls}">${score}</b><span>/100 — ${word}</span></div>
-          <p>That's how fast <strong>${esc(url.replace(/^https?:[/][/]/, ""))}</strong> loads on a phone. The full report — pages checked, what to fix, details for your developer — is on its way to <strong>${esc(email)}</strong>. Check spam if it isn't there in two minutes.</p>
+          <div class="score"><b class="${cls}">${score}</b><span>/100, ${word}</span></div>
+          <p>That's how fast <strong>${esc(url.replace(/^https?:[/][/]/, ""))}</strong> loads on a phone. The full report (pages checked, what to fix, details for your developer) is on its way to <strong>${esc(email)}</strong>. Check spam if it isn't there in two minutes.</p>
           <p>${data.updated ? "This site was already on our list, so we've updated it." : "We're now checking it every five minutes."} You'll hear from us only if something breaks, when it's fixed, and on Monday mornings.</p>
           <div class="actions">
             <button class="cta" id="again">Add another site <span class="arr">→</span></button>

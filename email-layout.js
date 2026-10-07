@@ -79,7 +79,7 @@ export function layout(site, { preheader = "", body = "", kicker = "" }) {
       Need a fix? Reply to this email or <a href="${fixMailto(site)}" style="color:${BRAND.muted};">request a fix</a>.
       &nbsp;·&nbsp; <a href="${cancelUrl(site)}" style="color:${BRAND.muted};">Stop monitoring this site</a>
     </p>
-    <p style="margin:12px 0 0;font-family:${FONT};font-size:11px;color:#A8A4BC;">PromptHall.space — Your website. Our watch.</p>
+    <p style="margin:12px 0 0;font-family:${FONT};font-size:11px;color:#A8A4BC;">PromptHall.space. Your website. Our watch.</p>
   </td></tr>
 </table></td></tr></table></body></html>`;
 }

@@ -12,13 +12,13 @@ export function renderWelcomeHtml(site) {
     ${pill("Welcome · free pilot", "purple")}
     <div style="height:14px;"></div>
     ${h1(`We're now watching ${esc(name)}.`)}
-    ${p(`You're using PromptHall ${strong("free of charge")} during our pilot — no card, no contract. In return we only ask one thing: tell us when an email was useful, confusing or late. That's how we're building this.`)}
+    ${p(`You're using PromptHall ${strong("free of charge")} during our pilot. No card, no contract. In return we only ask one thing: tell us when an email was useful, confusing or late. That's how we're building this.`)}
 
     ${panel(`
       ${label("What happens from here")}
-      ${p(`${strong("In about a minute")} — your first report lands in a separate email.`, "margin-bottom:8px;")}
-      ${p(`${strong("Every 5 minutes")} — we check your site. If a page breaks you get one email within minutes, and another when it's fixed.`, "margin-bottom:8px;")}
-      ${p(`${strong("Every Monday, 8am")} — a report of the week. Otherwise, silence.`, "margin-bottom:0;")}
+      ${p(`${strong("In about a minute:")} your first report lands in a separate email.`, "margin-bottom:8px;")}
+      ${p(`${strong("Every 5 minutes:")} we check your site. If a page breaks you get one email within minutes, and another when it's fixed.`, "margin-bottom:8px;")}
+      ${p(`${strong("Every Monday, 8am:")} a report of the week. Otherwise, silence.`, "margin-bottom:0;")}
     `)}
 
     ${panel(`
@@ -28,7 +28,7 @@ export function renderWelcomeHtml(site) {
       ${button(fixMailto(site), "Request a fix")}
     `, "purple")}
 
-    ${small(`Changed your mind? ${link(cancelUrl(site), "Stop monitoring this site")} — one click, no questions.`)}
+    ${small(`Changed your mind? ${link(cancelUrl(site), "Stop monitoring this site")}. One click, no questions.`)}
   `;
   return layout(site, { preheader: `You're on the free PromptHall pilot. Your first report is on its way.`, kicker: "Welcome", body });
 }
@@ -38,7 +38,7 @@ export async function sendWelcomeEmail(site) {
   const { error } = await resend.emails.send({
     from: FROM,
     to: site.owner_email,
-    subject: `Welcome to PromptHall — we're now watching ${site.name || site.url}`,
+    subject: `Welcome to PromptHall, we're now watching ${site.name || site.url}`,
     html: renderWelcomeHtml(site),
   });
   if (error) console.error(`Failed to send welcome email for ${site.url}:`, error.message || error);
