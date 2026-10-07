@@ -4,15 +4,11 @@
 // the first report right away. The schedulers take over after that.
 
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
-import { checkSite } from "../site-checker.js";
-import { buildSummary } from "../digest-summary.js";
-import { renderEmailHtml } from "../email-template.js";
+import { onboardSite } from "../onboard-site.js";
 import { normaliseSiteUrl, normaliseImportantPages } from "../site-utils.js";
 
 // Server-side only: never ship the service_role key to the browser.
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -46,19 +42,8 @@ export default async function handler(req, res) {
     const { data: site, error: saveError } = await query.select().single();
     if (saveError) throw new Error(saveError.message);
 
-    // 2. Run the first check immediately.
-    const result = await checkSite(url);
-    const { error: scoreError } = await supabase.from("scores").insert({ site_id: site.id, ...result });
-    if (scoreError) throw new Error(scoreError.message);
-
-    // 3. Email the first report right away.
-    const summary = buildSummary([{ ...result, checked_at: new Date().toISOString() }]);
-    await resend.emails.send({
-      from: "PromptHall Monitor <monitor@prompthall.space>",
-      to: email,
-      subject: `${site.name || site.url} — your first PromptHall report (${summary.score}/100)`,
-      html: renderEmailHtml(site, summary),
-    });
+    // 2. Welcome email, first check, first report (shared with the admin dashboard).
+    const summary = await onboardSite(supabase, site, { isUpdate: Boolean(existing) });
 
     return res.status(200).json({ ok: true, score: summary.score, updated: Boolean(existing) });
   } catch (err) {

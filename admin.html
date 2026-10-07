@@ -313,11 +313,16 @@
     if (!body.url || !body.owner_email) { $("m-err").textContent = "Website address and owner email are required."; return; }
     $("m-save").disabled = true;
     try {
-      if (editing) await api("?site=" + editing.id, "PATCH", body); else await api("", "POST", body);
+      if (editing) { await api("?site=" + editing.id, "PATCH", body); }
+      else {
+        $("m-save").textContent = "Checking site and emailing owner (about a minute)...";
+        const r = await api("", "POST", body);
+        if (r.onboardError) alert("Site added, but the first check/email failed: " + r.onboardError + ". The monitor will still check it every 5 minutes.");
+      }
       closeModal(); await load();
       if (editing) openDetail(editing.id);
     } catch (err) { $("m-err").textContent = err.message; }
-    finally { $("m-save").disabled = false; }
+    finally { $("m-save").disabled = false; $("m-save").textContent = "Save"; }
   }
   async function deleteSite(site) {
     const ok = confirm(`Delete ${site.name || site.url}?` + String.fromCharCode(10) + String.fromCharCode(10) + `This removes the site, all its checks, scores and incidents. ${site.owner_email || "The owner"} will stop receiving emails. This cannot be undone.`);

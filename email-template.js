@@ -3,6 +3,8 @@
 // plain language for the owner on top, a "For your developer" box with the
 // technical facts at the bottom. Used by send-digest.js and api/add-site.js.
 
+import { emailFooterHtml } from "./links.js";
+
 function escapeHtml(value) {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
@@ -124,7 +126,6 @@ export function renderEmailHtml(site, summary) {
         ? "From now on we check your site every 5 minutes and email you within minutes if a page goes down, plus a report like this every Monday."
         : "We keep checking your site every 5 minutes. Your next report arrives next Monday."}</p>
 
-      <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0;" />
-      <p style="font-size:12px;color:#9CA3AF;margin:0;">PromptHall.space &nbsp;|&nbsp; Your website. Our watch.<br/>Monitoring: ${escapeHtml(site.url)}</p>
+      ${emailFooterHtml(site)}
     </div>`;
 }

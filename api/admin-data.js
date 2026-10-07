@@ -8,12 +8,13 @@
 //   POST   /api/admin-data            -> create a site  { url, owner_email, name?, important_pages? }
 //   PATCH  /api/admin-data?site=<id>  -> update a site  (same fields, any subset)
 //   DELETE /api/admin-data?site=<id>  -> delete a site and all its checks, scores and incidents
-// Sites created here are NOT checked immediately or emailed; the 5-minute
-// monitor picks them up on its next run.
+// Sites created here get the same onboarding as a public signup: welcome
+// email, immediate first check, first report.
 
 import { createClient } from "@supabase/supabase-js";
 import { timingSafeEqual } from "node:crypto";
 import { normaliseSiteUrl, normaliseImportantPages, normaliseEmail } from "../site-utils.js";
+import { onboardSite } from "../onboard-site.js";
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -51,7 +52,10 @@ export default async function handler(req, res) {
       const fields = siteFields(body);
       const { data, error } = await supabase.from("sites").insert(fields).select().single();
       if (error) throw new Error(error.message);
-      return res.status(201).json({ site: data });
+      // Same as a public signup: welcome email, first check, first report.
+      let score = null, onboardError = null;
+      try { score = (await onboardSite(supabase, data)).score; } catch (e) { onboardError = e.message; }
+      return res.status(201).json({ site: data, score, onboardError });
     }
 
     if (req.method === "PATCH") {

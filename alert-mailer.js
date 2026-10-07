@@ -5,6 +5,7 @@
 // so the owner can forward the email as-is and the developer can act on it.
 
 import { Resend } from "resend";
+import { emailFooterHtml } from "./links.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = "PromptHall <monitor@prompthall.space>";
@@ -149,12 +150,7 @@ function headerHtml() {
 }
 
 function footerHtml(site) {
-  return `
-      <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0;" />
-      <p style="font-size:12px;color:#9CA3AF;margin:0;">
-        PromptHall.space &nbsp;|&nbsp; Your website. Our watch.<br/>
-        Monitoring: ${escapeHtml(site.url)}
-      </p>`;
+  return emailFooterHtml(site);
 }
 
 export function renderIssueAlertHtml(site, page, description, recommendation) {
