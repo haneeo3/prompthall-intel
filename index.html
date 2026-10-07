@@ -3,281 +3,310 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PromptHall Monitor — Website monitoring for Nigerian businesses</title>
-<meta name="description" content="We check your website every 5 minutes and email you within minutes if a page goes down, in plain English, with the details your developer needs." />
+<title>PromptHall Monitor — Know the moment your website goes down</title>
+<meta name="description" content="We check your website every 5 minutes and email you within minutes if a page goes down — in plain English, with the details your developer needs." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #0B0A14; --bg2: #110F1F; --panel: #171429; --panel2: #1E1A33; --line: #2A2545; --line2: #3B3460;
-    --text: #EDEAFB; --muted: #9A94B8; --dim: #6C6690;
-    --purple: #7C5CFF; --purple2: #9D85FF; --purple-soft: rgba(124, 92, 255, 0.14);
-    --green: #34D399; --red: #F87171; --amber: #FBBF24;
-    --mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
-    --sans: Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --bg: #0E0C16; --ink: #F3F1FA; --ink-2: #A9A3C2; --ink-3: #6E6889;
+    --rule: rgba(243,241,250,0.10); --rule-2: rgba(243,241,250,0.22);
+    --accent: #8B6CFF; --accent-ink: #0E0C16;
+    --ok: #4ADE80; --bad: #F87171; --warn: #FBBF24;
+    --sans: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-  body { min-height: 100vh; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 40px 40px; background-position: center top; }
-  body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(900px 500px at 20% -10%, rgba(124,92,255,0.22), transparent 60%), radial-gradient(700px 400px at 100% 100%, rgba(124,92,255,0.10), transparent 60%); pointer-events: none; }
-  a { color: var(--purple2); text-decoration: none; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
 
-  /* Top bar */
-  .bar { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; padding: 14px 28px; border-bottom: 1px solid var(--line); background: rgba(11,10,20,0.75); backdrop-filter: blur(8px); }
-  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
-  .logo .mark { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--purple), #B794FF); display: grid; place-items: center; font-family: var(--mono); font-size: 13px; color: #fff; }
-  .logo small { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 4px; }
-  .status { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg2); }
-  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(52,211,153,0.15); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 3px rgba(52,211,153,0.12);} 50% { box-shadow: 0 0 0 7px rgba(52,211,153,0.04);} }
-  .bar .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; border: 1px solid var(--line2); background: var(--panel); color: var(--text); cursor: pointer; transition: border-color .15s, background .15s, transform .05s; }
-  .btn:hover { border-color: var(--purple); background: var(--panel2); }
-  .btn:active { transform: translateY(1px); }
-  .btn.primary { background: var(--purple); border-color: var(--purple); color: #fff; width: 100%; padding: 13px 16px; font-size: 15px; }
-  .btn.primary:hover { background: #8B6FFF; }
-  .btn.primary:disabled { opacity: .6; cursor: default; }
-  .btn.ghost { background: transparent; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+  @media (max-width: 640px) { .wrap { padding: 0 20px; } }
 
-  /* Layout */
-  main { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 48px 24px 64px; }
-  .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: start; }
-  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } .bar { padding: 12px 16px; } .status span.txt { display: none; } }
-  .eyebrow { font-family: var(--mono); font-size: 12px; color: var(--purple2); letter-spacing: 1.2px; text-transform: uppercase; margin: 0 0 12px; }
-  h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.5px; }
-  h1 em { font-style: normal; color: var(--purple2); }
-  .lead { color: var(--muted); font-size: 16px; line-height: 1.6; margin: 0 0 28px; max-width: 520px; }
+  /* Nav */
+  nav { display: flex; align-items: center; justify-content: space-between; height: 72px; border-bottom: 1px solid var(--rule); }
+  .brand { font-weight: 600; letter-spacing: -0.01em; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .brand i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; }
+  .brand span { color: var(--ink-3); font-weight: 400; }
+  nav ul { list-style: none; display: flex; gap: 28px; margin: 0; padding: 0; font-size: 14px; color: var(--ink-2); }
+  nav ul a:hover { color: var(--ink); }
+  nav ul .admin { color: var(--ink); border: 1px solid var(--rule-2); padding: 8px 14px; border-radius: 999px; transition: border-color .2s, background .2s; }
+  nav ul .admin:hover { border-color: var(--ink); }
+  @media (max-width: 640px) { nav ul li:not(:last-child) { display: none; } }
 
-  /* Panel / form */
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
-  .panel-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--bg2); font-family: var(--mono); font-size: 12px; color: var(--muted); }
-  .panel-head i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: var(--line2); }
-  .panel-head i:nth-child(1) { background: #FF5F57; } .panel-head i:nth-child(2) { background: #FEBC2E; } .panel-head i:nth-child(3) { background: #28C840; }
-  .panel-head .title { margin-left: 8px; }
-  .panel-body { padding: 22px; }
-  label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin: 16px 0 6px; }
-  label:first-child { margin-top: 0; }
-  label .opt { color: var(--dim); font-weight: 500; }
-  input, textarea { width: 100%; padding: 12px 14px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 10px; color: var(--text); font-size: 14px; font-family: var(--sans); outline: none; transition: border-color .15s, box-shadow .15s; }
-  input::placeholder, textarea::placeholder { color: var(--dim); }
-  input:focus, textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-soft); }
-  textarea { min-height: 84px; resize: vertical; font-family: var(--mono); font-size: 13px; }
-  .hint { font-size: 12px; color: var(--dim); margin: 6px 0 0; line-height: 1.5; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
-  .submit { margin-top: 22px; }
-  .fine { font-size: 12px; color: var(--dim); text-align: center; margin: 12px 0 0; }
-  .error { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.35); color: #FCA5A5; font-size: 14px; display: none; }
+  /* Hero */
+  .hero { padding: 96px 0 72px; border-bottom: 1px solid var(--rule); }
+  .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 28px; }
+  h1 { font-size: clamp(44px, 7.2vw, 104px); line-height: 0.98; letter-spacing: -0.035em; font-weight: 500; margin: 0; max-width: 14ch; }
+  h1 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent); letter-spacing: -0.01em; }
+  .hero p { font-size: clamp(17px, 1.6vw, 21px); line-height: 1.5; color: var(--ink-2); max-width: 46ch; margin: 36px 0 0; }
+  @media (max-width: 640px) { .hero { padding: 64px 0 48px; } }
 
-  /* Right column: what you get */
-  .feature { display: flex; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(23,20,41,0.7); margin-bottom: 12px; }
-  .feature .ic { width: 36px; height: 36px; flex: none; border-radius: 9px; background: var(--purple-soft); border: 1px solid rgba(124,92,255,0.35); display: grid; place-items: center; font-family: var(--mono); font-size: 12px; color: var(--purple2); }
-  .feature b { display: block; font-size: 14px; margin-bottom: 3px; }
-  .feature p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
-  .specs { margin-top: 18px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-family: var(--mono); font-size: 12px; }
-  .specs div { display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--bg2); }
-  .specs div:last-child { border-bottom: 0; }
-  .specs span:first-child { color: var(--dim); } .specs span:last-child { color: var(--text); }
+  /* Two columns */
+  .cols { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 80px; padding: 72px 0 96px; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; gap: 56px; padding: 56px 0 72px; } }
+  .section-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 32px; display: flex; align-items: center; gap: 12px; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
 
-  /* Progress screen */
-  .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(11,10,20,0.92); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 20px; }
+  /* Form */
+  .field { padding: 22px 0 14px; border-bottom: 1px solid var(--rule-2); transition: border-color .2s; }
+  .field:focus-within { border-color: var(--ink); }
+  .field label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+  .field label b { font-weight: 400; color: var(--ink-3); opacity: .7; margin-left: 8px; text-transform: none; letter-spacing: 0; }
+  .field input { width: 100%; background: none; border: 0; outline: 0; color: var(--ink); font: 500 22px/1.3 var(--sans); letter-spacing: -0.01em; padding: 0; }
+  .field input::placeholder { color: var(--ink-3); font-weight: 400; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+  @media (max-width: 640px) { .two { grid-template-columns: 1fr; } .field input { font-size: 19px; } }
+
+  /* Tag input */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 36px; }
+  .tag { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px 7px 12px; border: 1px solid var(--rule-2); border-radius: 999px; font: 500 14px var(--mono); color: var(--ink); background: rgba(139,108,255,0.08); }
+  .tag button { all: unset; cursor: pointer; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); font-size: 15px; line-height: 1; transition: background .15s, color .15s; }
+  .tag button:hover { background: var(--ink); color: var(--bg); }
+  .tags input { flex: 1; min-width: 160px; font: 500 16px var(--sans); }
+  .help { font-size: 13px; color: var(--ink-3); margin: 10px 0 0; line-height: 1.5; }
+  .help kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--rule-2); border-radius: 4px; padding: 1px 5px; color: var(--ink-2); }
+
+  .actions { display: flex; align-items: center; gap: 24px; margin-top: 40px; flex-wrap: wrap; }
+  .cta { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 14px; background: var(--ink); color: var(--bg); font: 500 16px var(--sans); padding: 18px 26px; border-radius: 999px; transition: background .2s, transform .15s, opacity .2s; }
+  .cta:hover { background: var(--accent); color: var(--accent-ink); }
+  .cta:active { transform: scale(0.98); }
+  .cta:disabled { opacity: .5; cursor: default; }
+  .cta .arr { display: inline-block; transition: transform .2s; }
+  .cta:hover .arr { transform: translateX(4px); }
+  .actions small { color: var(--ink-3); font-size: 13px; }
+  .error { margin-top: 20px; color: var(--bad); font-size: 14px; display: none; }
+
+  /* Right column */
+  .list { list-style: none; margin: 0; padding: 0; counter-reset: n; }
+  .list li { counter-increment: n; display: grid; grid-template-columns: 40px 1fr; gap: 16px; padding: 22px 0; border-bottom: 1px solid var(--rule); }
+  .list li:first-child { padding-top: 0; }
+  .list li::before { content: "0" counter(n); font-family: var(--mono); font-size: 12px; color: var(--ink-3); padding-top: 4px; }
+  .list b { display: block; font-weight: 500; font-size: 17px; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .list p { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.6; }
+  .quote { margin: 40px 0 0; padding: 0; font-family: var(--serif); font-style: italic; font-size: 26px; line-height: 1.3; color: var(--ink); letter-spacing: -0.01em; }
+  .quote + small { display: block; margin-top: 12px; font-family: var(--mono); font-size: 12px; color: var(--ink-3); letter-spacing: 0.06em; }
+
+  footer { border-top: 1px solid var(--rule); padding: 28px 0 40px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink-3); }
+  footer a:hover { color: var(--ink); }
+
+  /* Progress / result */
+  .overlay { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: none; align-items: center; justify-content: center; padding: 24px; }
   .overlay.show { display: flex; }
-  .progress { width: 100%; max-width: 520px; }
-  .progress .panel-body { padding: 26px; }
-  .progress h2 { margin: 0 0 4px; font-size: 20px; }
-  .progress .sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
-  .track { height: 6px; background: var(--bg2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-bottom: 22px; }
-  .track i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--purple), #B794FF); transition: width .6s ease; }
+  .box { width: 100%; max-width: 560px; }
+  .box .kicker { margin-bottom: 20px; }
+  .box h2 { font-size: clamp(30px, 4vw, 44px); letter-spacing: -0.03em; font-weight: 500; line-height: 1.05; margin: 0 0 14px; }
+  .box h2 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent); }
+  .box .sub { color: var(--ink-2); font-size: 16px; line-height: 1.5; margin: 0 0 40px; }
+  .track { height: 2px; background: var(--rule-2); margin-bottom: 36px; position: relative; overflow: hidden; }
+  .track i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); transition: width .6s ease; }
   .steps { list-style: none; margin: 0; padding: 0; }
-  .steps li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--line); font-size: 14px; color: var(--dim); }
-  .steps li:last-child { border-bottom: 0; }
-  .steps .n { width: 24px; height: 24px; flex: none; border-radius: 50%; border: 1px solid var(--line2); display: grid; place-items: center; font-family: var(--mono); font-size: 11px; }
-  .steps li.active { color: var(--text); } .steps li.active .n { border-color: var(--purple); color: var(--purple2); animation: spin 1.2s linear infinite; border-top-color: transparent; }
-  .steps li.done { color: var(--muted); } .steps li.done .n { background: var(--green); border-color: var(--green); color: #052; animation: none; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .steps .t { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--dim); }
-  .elapsed { margin-top: 18px; font-family: var(--mono); font-size: 12px; color: var(--dim); text-align: center; }
-
-  /* Result screen */
-  .score { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 2px; }
-  .score b { font-size: 56px; letter-spacing: -2px; line-height: 1; }
-  .score span { color: var(--muted); font-size: 16px; }
-  .good { color: var(--green);} .mid { color: var(--amber);} .bad { color: var(--red);}
-  .result p { color: var(--muted); font-size: 14px; line-height: 1.6; }
-  .result .next { display: grid; gap: 10px; margin-top: 18px; }
-  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-family: var(--mono); font-size: 11px; border: 1px solid var(--line2); color: var(--muted); }
-  footer { position: relative; z-index: 1; border-top: 1px solid var(--line); padding: 18px 28px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--dim); font-family: var(--mono); }
-  footer span:last-child { margin-left: auto; }
+  .steps li { display: flex; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--rule); font-size: 16px; color: var(--ink-3); transition: color .3s; }
+  .steps li .i { font-family: var(--mono); font-size: 12px; width: 24px; flex: none; }
+  .steps li.active { color: var(--ink); } .steps li.active .i { color: var(--accent); }
+  .steps li.active .i::after { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 6px; animation: blink 1s infinite; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: .2; } }
+  .steps li.done { color: var(--ink-2); } .steps li.done .i { color: var(--ok); }
+  .steps li .t { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+  .elapsed { margin-top: 28px; font-family: var(--mono); font-size: 12px; color: var(--ink-3); letter-spacing: 0.06em; }
+  .score { display: flex; align-items: baseline; gap: 14px; margin: 8px 0 24px; }
+  .score b { font-size: clamp(72px, 10vw, 120px); font-weight: 500; letter-spacing: -0.05em; line-height: 0.9; }
+  .score span { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--ink-2); }
+  .good { color: var(--ok);} .mid { color: var(--warn);} .bad { color: var(--bad);}
+  .result p { color: var(--ink-2); font-size: 16px; line-height: 1.6; margin: 0 0 14px; }
+  .result p strong { color: var(--ink); font-weight: 500; }
+  .result .actions { margin-top: 32px; }
+  .link { color: var(--ink-2); font-size: 15px; border-bottom: 1px solid var(--rule-2); padding-bottom: 2px; cursor: pointer; }
+  .link:hover { color: var(--ink); border-color: var(--ink); }
 </style>
 </head>
 <body>
 
-<header class="bar">
-  <div class="logo"><span class="mark">PH</span>PromptHall <small>Monitor</small></div>
-  <div class="status"><span class="dot"></span><span class="txt">Checks every 5 min · Lagos time</span></div>
-  <div class="right">
-    <a class="btn ghost" href="https://prompthall.space">prompthall.space</a>
-    <a class="btn" href="/admin.html" id="admin-link">Admin</a>
-  </div>
-</header>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="/"><i></i>PromptHall <span>Monitor</span></a>
+    <ul>
+      <li><a href="#what">What you get</a></li>
+      <li><a href="https://prompthall.space">prompthall.space</a></li>
+      <li><a class="admin" href="/admin.html">Admin</a></li>
+    </ul>
+  </nav>
 
-<main>
-  <div class="grid">
+  <section class="hero">
+    <p class="kicker">Website monitoring · every 5 minutes · Lagos time</p>
+    <h1>Know the moment your website <em>goes down.</em></h1>
+    <p>A plain-English email within minutes of a page breaking — what happened, what it means for your business, and exactly what to tell your developer. Another when it's fixed. A report every Monday. Nothing else.</p>
+  </section>
+
+  <div class="cols">
     <section>
-      <p class="eyebrow">Website monitoring</p>
-      <h1>Know the moment your website <em>goes down.</em></h1>
-      <p class="lead">We check your site every 5 minutes. If a page breaks, you get a plain-English email within minutes that says what happened, what it means for your business, and exactly what to tell your developer. Plus a report every Monday.</p>
-
-      <div class="panel">
-        <div class="panel-head"><i></i><i></i><i></i><span class="title">new-site — first check runs immediately</span></div>
-        <form class="panel-body" id="signup-form" novalidate>
+      <p class="section-label">Start monitoring</p>
+      <form id="signup-form" novalidate>
+        <div class="field">
           <label for="url">Website address</label>
-          <input type="url" id="url" placeholder="https://yourbusiness.com" required autocomplete="url" inputmode="url" />
-
-          <div class="row2">
-            <div>
-              <label for="email">Your email</label>
-              <input type="email" id="email" placeholder="you@business.com" required autocomplete="email" />
-            </div>
-            <div>
-              <label for="name">Business name <span class="opt">(optional)</span></label>
-              <input type="text" id="name" placeholder="Lagos Bakery" autocomplete="organization" />
-            </div>
+          <input type="url" id="url" placeholder="yourbusiness.com" required autocomplete="url" inputmode="url" />
+        </div>
+        <div class="two">
+          <div class="field">
+            <label for="email">Your email</label>
+            <input type="email" id="email" placeholder="you@business.com" required autocomplete="email" />
           </div>
-
-          <label for="pages">Pages that matter most <span class="opt">(optional)</span></label>
-          <textarea id="pages" placeholder="/contact&#10;/book&#10;/checkout"></textarea>
-          <p class="hint">One per line. Your contact, booking or checkout page. We check these first and tell you what an outage means for your business.</p>
-
-          <div class="submit"><button type="submit" class="btn primary" id="submit-btn">Start monitoring →</button></div>
-          <p class="fine">Free. No card. Your first report lands in your inbox in about a minute.</p>
-          <div class="error" id="error"></div>
-        </form>
-      </div>
+          <div class="field">
+            <label for="name">Business name <b>optional</b></label>
+            <input type="text" id="name" placeholder="Lagos Bakery" autocomplete="organization" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="pages-input">Pages that matter most <b>optional</b></label>
+          <div class="tags" id="tags">
+            <input type="text" id="pages-input" placeholder="/contact" autocomplete="off" />
+          </div>
+          <p class="help">Type a page like <kbd>/book</kbd> or <kbd>/checkout</kbd> and press <kbd>Enter</kbd>. We check these first and explain what an outage means for your business.</p>
+        </div>
+        <div class="actions">
+          <button type="submit" class="cta" id="submit-btn">Start monitoring <span class="arr">→</span></button>
+          <small>Free. No card. First report in about a minute.</small>
+        </div>
+        <p class="error" id="error"></p>
+      </form>
     </section>
 
-    <aside>
-      <div class="feature"><div class="ic">5m</div><div><b>Checked every 5 minutes</b><p>Homepage, your important pages and up to 10 more we find on your site. A problem must show up twice, 30 seconds apart, before we alert you — no false alarms.</p></div></div>
-      <div class="feature"><div class="ic">@</div><div><b>Plain-English alerts</b><p>"Your booking page is down. Customers cannot book right now." One email when it breaks, one when it's fixed. Nothing in between.</p></div></div>
-      <div class="feature"><div class="ic">&lt;/&gt;</div><div><b>Developer details included</b><p>Status code, error type, server header, response time and a ready-to-run test command at the bottom of every alert. Forward it and your developer can start fixing.</p></div></div>
-      <div class="feature"><div class="ic">Mo</div><div><b>Monday report</b><p>Speed score, what changed, every outage of the week and total downtime — in one email, every Monday at 8am.</p></div></div>
-      <div class="specs">
-        <div><span>check interval</span><span>5 min</span></div>
-        <div><span>alert delay</span><span>≈ 5–7 min</span></div>
-        <div><span>pages per site</span><span>up to 12</span></div>
-        <div><span>confirmation</span><span>2 checks, 30 s apart</span></div>
-        <div><span>timezone</span><span>Africa/Lagos (WAT)</span></div>
-      </div>
+    <aside id="what">
+      <p class="section-label">What you get</p>
+      <ol class="list">
+        <li><div><b>Checked every five minutes</b><p>Homepage, the pages you name, and up to ten more we find on your site. A problem has to show up twice, thirty seconds apart, before we tell you.</p></div></li>
+        <li><div><b>One email when it breaks, one when it's fixed</b><p>No noise in between. Written for the owner, with a short technical section at the bottom for whoever fixes it.</p></div></li>
+        <li><div><b>Monday morning report</b><p>Speed score, what changed, every outage of the week and total downtime. One email, 8am.</p></div></li>
+      </ol>
+      <p class="quote">"Your booking page is down. Customers cannot book right now. We've emailed your developer the details."</p>
+      <small>— the first line of an alert</small>
     </aside>
   </div>
-</main>
 
-<footer><span>PromptHall Monitor</span><span>Your website. Our watch.</span><span><a href="/admin.html">Admin</a></span></footer>
+  <footer>
+    <span>PromptHall Monitor — your website, our watch.</span>
+    <span><a href="/admin.html">Admin</a></span>
+  </footer>
+</div>
 
-<!-- Progress / result overlay -->
 <div class="overlay" id="overlay" role="dialog" aria-live="polite">
-  <div class="panel progress" id="progress-panel">
-    <div class="panel-head"><i></i><i></i><i></i><span class="title" id="ov-title">first-check — running</span></div>
-    <div class="panel-body" id="ov-body">
-      <h2>Checking your website</h2>
-      <p class="sub">This takes about a minute. We run a real Google speed test and visit your pages one by one.</p>
-      <div class="track"><i id="track-fill"></i></div>
-      <ul class="steps" id="steps">
-        <li data-step="0"><span class="n">1</span>Saving your site<span class="t"></span></li>
-        <li data-step="1"><span class="n">2</span>Running Google PageSpeed test<span class="t">30–60 s</span></li>
-        <li data-step="2"><span class="n">3</span>Visiting your pages for broken links and slow responses<span class="t"></span></li>
-        <li data-step="3"><span class="n">4</span>Writing and sending your first report<span class="t"></span></li>
-      </ul>
-      <p class="elapsed" id="elapsed">0 s elapsed</p>
-    </div>
+  <div class="box" id="box">
+    <p class="kicker" id="ov-kicker">First check · running</p>
+    <h2>Checking <em id="ov-site">your website</em></h2>
+    <p class="sub">About a minute. We run a real Google speed test and visit your pages one by one.</p>
+    <div class="track"><i id="track-fill"></i></div>
+    <ol class="steps" id="steps">
+      <li><span class="i">01</span>Saving your site<span class="t"></span></li>
+      <li><span class="i">02</span>Running Google PageSpeed test<span class="t">30–60 s</span></li>
+      <li><span class="i">03</span>Visiting your pages<span class="t"></span></li>
+      <li><span class="i">04</span>Writing your first report<span class="t"></span></li>
+    </ol>
+    <p class="elapsed" id="elapsed">0 S ELAPSED</p>
   </div>
 </div>
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const form = $("signup-form"), submitBtn = $("submit-btn"), errorEl = $("error");
-  const overlay = $("overlay"), steps = [...document.querySelectorAll("#steps li")], fill = $("track-fill"), elapsedEl = $("elapsed");
+  const esc = (v) => String(v ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
-  // Progress is time-based (the server does one long job), but it never reaches
-  // "done" until the server actually answers, so it stays honest.
-  const PLAN = [[0, 3], [3, 35], [35, 50], [50, 1e9]]; // step -> [startSec, endSec]
-  let startedAt = 0, timer = null;
-
-  function setStep(i) {
-    steps.forEach((li, k) => { li.classList.toggle("done", k < i); li.classList.toggle("active", k === i); });
+  /* ---- Tag input for important pages ---- */
+  const tagsEl = $("tags"), pagesInput = $("pages-input");
+  const pages = [];
+  function renderTags() {
+    tagsEl.querySelectorAll(".tag").forEach((t) => t.remove());
+    pages.forEach((p, i) => {
+      const el = document.createElement("span");
+      el.className = "tag";
+      el.innerHTML = `${esc(p)}<button type="button" aria-label="Remove ${esc(p)}">×</button>`;
+      el.querySelector("button").addEventListener("click", () => { pages.splice(i, 1); renderTags(); pagesInput.focus(); });
+      tagsEl.insertBefore(el, pagesInput);
+    });
+    pagesInput.placeholder = pages.length ? "" : "/contact";
   }
+  function addTag(raw) {
+    let v = raw.trim().replace(/[,;]+$/, "");
+    if (!v) return;
+    if (!/^https?:/i.test(v) && !v.startsWith("/")) v = "/" + v;
+    if (pages.length >= 10 || pages.includes(v)) return;
+    pages.push(v); renderTags();
+  }
+  pagesInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === "," || e.key === "Tab" && pagesInput.value.trim()) {
+      e.preventDefault(); addTag(pagesInput.value); pagesInput.value = "";
+    } else if (e.key === "Backspace" && !pagesInput.value && pages.length) {
+      pages.pop(); renderTags();
+    }
+  });
+  pagesInput.addEventListener("blur", () => { if (pagesInput.value.trim()) { addTag(pagesInput.value); pagesInput.value = ""; } });
+  pagesInput.addEventListener("paste", (e) => {
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    if (/[,;]|[^ -~]/.test(text)) { e.preventDefault(); text.split(/[,;]|[^ -~]+/).forEach(addTag); }
+  });
+  tagsEl.addEventListener("click", (e) => { if (e.target === tagsEl) pagesInput.focus(); });
+
+  /* ---- Progress ---- */
+  const overlay = $("overlay"), box = $("box"), originalBox = box.innerHTML;
+  const PLAN = [[0, 3], [3, 35], [35, 50], [50, 1e9]];
+  let startedAt = 0, timer = null;
+  const stepEls = () => [...document.querySelectorAll("#steps li")];
+  function setStep(i) { stepEls().forEach((li, k) => { li.classList.toggle("done", k < i); li.classList.toggle("active", k === i); }); }
   function tick() {
     const s = (Date.now() - startedAt) / 1000;
-    elapsedEl.textContent = `${Math.floor(s)} s elapsed`;
-    const i = Math.min(3, PLAN.findIndex(([a, b]) => s >= a && s < b));
-    setStep(i);
-    // Bar creeps towards 92% and waits there for the server.
-    const pct = Math.min(92, 100 * (1 - Math.exp(-s / 35)));
-    fill.style.width = pct.toFixed(1) + "%";
-    if (s > 75) steps[3].querySelector(".t").textContent = "almost there";
+    $("elapsed").textContent = `${Math.floor(s)} S ELAPSED`;
+    setStep(Math.min(3, PLAN.findIndex(([a, b]) => s >= a && s < b)));
+    $("track-fill").style.width = Math.min(92, 100 * (1 - Math.exp(-s / 35))).toFixed(1) + "%";
+    if (s > 75) stepEls()[3].querySelector(".t").textContent = "almost there";
   }
-  function showProgress() {
-    startedAt = Date.now();
-    overlay.classList.add("show");
-    $("ov-title").textContent = "first-check — running";
-    tick(); timer = setInterval(tick, 500);
+  function showProgress(url) {
+    box.innerHTML = originalBox;
+    $("ov-site").textContent = url.replace(/^https?:[/][/]/, "");
+    overlay.classList.add("show"); startedAt = Date.now(); tick(); timer = setInterval(tick, 500);
   }
-  function stopProgress() { clearInterval(timer); fill.style.width = "100%"; setStep(4); }
-
   function showResult(data, email, url) {
+    clearInterval(timer); $("track-fill").style.width = "100%"; setStep(4);
     const score = data.score, cls = score >= 90 ? "good" : score >= 50 ? "mid" : "bad";
-    const word = score >= 90 ? "Fast" : score >= 50 ? "Could be faster" : "Slow";
-    $("ov-title").textContent = "first-check — complete";
-    $("ov-body").innerHTML = `
-      <div class="result">
-        <span class="pill"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span> ${data.updated ? "site updated" : "monitoring started"}</span>
-        <div class="score"><b class="${cls}">${score}</b><span>/100 · ${word}</span></div>
-        <p>That's how fast <strong style="color:var(--text)">${esc(url)}</strong> loads on a phone. The full report — pages checked, what to fix, and the details for your developer — is on its way to <strong style="color:var(--text)">${esc(email)}</strong>. Check spam if it isn't there in two minutes.</p>
-        <p>From now on we check it every 5 minutes. You'll only hear from us if something breaks, when it's fixed, and every Monday morning.</p>
-        <div class="next">
-          <button class="btn primary" id="again">Add another site</button>
-          <a class="btn" href="https://prompthall.space">Back to prompthall.space</a>
-        </div>
-      </div>`;
-    $("again").addEventListener("click", () => { overlay.classList.remove("show"); form.reset(); $("url").focus(); resetOverlay(); });
+    const word = score >= 90 ? "fast" : score >= 50 ? "could be faster" : "slow";
+    setTimeout(() => {
+      box.innerHTML = `
+        <p class="kicker">First check · complete</p>
+        <div class="result">
+          <div class="score"><b class="${cls}">${score}</b><span>/100 — ${word}</span></div>
+          <p>That's how fast <strong>${esc(url.replace(/^https?:[/][/]/, ""))}</strong> loads on a phone. The full report — pages checked, what to fix, details for your developer — is on its way to <strong>${esc(email)}</strong>. Check spam if it isn't there in two minutes.</p>
+          <p>${data.updated ? "This site was already on our list, so we've updated it." : "We're now checking it every five minutes."} You'll hear from us only if something breaks, when it's fixed, and on Monday mornings.</p>
+          <div class="actions">
+            <button class="cta" id="again">Add another site <span class="arr">→</span></button>
+            <a class="link" href="https://prompthall.space">Back to prompthall.space</a>
+          </div>
+        </div>`;
+      $("again").addEventListener("click", () => { overlay.classList.remove("show"); form.reset(); pages.length = 0; renderTags(); $("url").focus(); });
+    }, 500);
   }
-  function resetOverlay() {
-    $("ov-body").innerHTML = document.querySelector("#progress-panel").dataset.original;
-  }
-  document.querySelector("#progress-panel").dataset.original = $("ov-body").innerHTML;
 
-  const esc = (v) => String(v ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  function showError(msg) { errorEl.textContent = msg; errorEl.style.display = "block"; }
-
+  /* ---- Submit ---- */
+  const form = $("signup-form"), submitBtn = $("submit-btn"), errorEl = $("error");
+  const showError = (m) => { errorEl.textContent = m; errorEl.style.display = "block"; };
   form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorEl.style.display = "none";
+    e.preventDefault(); errorEl.style.display = "none";
+    if (pagesInput.value.trim()) { addTag(pagesInput.value); pagesInput.value = ""; }
     let url = $("url").value.trim();
     const email = $("email").value.trim(), name = $("name").value.trim() || null;
     if (url && !/^https?:[/][/]/i.test(url)) url = "https://" + url;
-    try { new URL(url); } catch { return showError("Please enter a full website address, like https://yourbusiness.com"); }
+    try { new URL(url); } catch { return showError("Please enter a website address, like yourbusiness.com"); }
     if (!/^[^@ ]+@[^@ ]+[.][^@ ]+$/.test(email)) return showError("Please enter a valid email address.");
-    const important_pages = $("pages").value.split(/[,;]|[^ -~]+/).map((s) => s.trim()).filter(Boolean);
 
-    submitBtn.disabled = true;
-    // Re-bind the live step elements after any previous reset.
-    steps.splice(0, steps.length, ...document.querySelectorAll("#steps li"));
-    showProgress();
+    submitBtn.disabled = true; showProgress(url);
     try {
-      const res = await fetch("/api/add-site", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, email, name, important_pages }),
-      });
+      const res = await fetch("/api/add-site", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url, email, name, important_pages: pages }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Something went wrong, please try again.");
-      stopProgress();
-      setTimeout(() => showResult(data, email, url), 500);
+      showResult(data, email, url);
     } catch (err) {
-      clearInterval(timer);
-      overlay.classList.remove("show");
-      resetOverlay();
+      clearInterval(timer); overlay.classList.remove("show");
       showError(err.message || "Something went wrong, please try again.");
-    } finally {
-      submitBtn.disabled = false;
-    }
+    } finally { submitBtn.disabled = false; }
   });
 </script>
 </body>
