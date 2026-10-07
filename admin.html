@@ -42,6 +42,15 @@
   #login { max-width: 380px; margin: 80px auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 28px; display: none; }
   #login p { color: var(--grey); font-size: 14px; } #login input { width: 100%; margin: 8px 0 12px; }
   .err { color: var(--red); font-size: 13px; }
+  button.danger { background: #fff; color: var(--red); border: 1px solid #FECACA; } button.danger:hover { background: #FEF2F2; }
+  #modal { position: fixed; inset: 0; background: rgba(17,26,60,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
+  #modal.show { display: flex; }
+  #modal .box { background: #fff; border-radius: 12px; padding: 24px; width: 100%; max-width: 480px; }
+  #modal h2 { margin: 0 0 14px; font-size: 18px; }
+  #modal label { display: block; font-size: 12px; color: var(--grey); margin: 12px 0 4px; }
+  #modal input, #modal textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-family: inherit; }
+  #modal textarea { min-height: 70px; resize: vertical; font-family: Menlo, Consolas, monospace; font-size: 12px; }
+  #modal .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 </style>
 </head>
 <body>
@@ -74,6 +83,7 @@
     <input type="search" id="q" placeholder="Search site, name or owner email" />
     <select id="filter"><option value="all">All sites</option><option value="down">Down now</option><option value="issues">With open incidents</option><option value="stale">Not checked in 15 min</option></select>
     <span class="muted" id="count"></span>
+    <button id="add-site" style="margin-left:auto">+ Add site</button>
   </div>
 
   <table>
@@ -88,6 +98,18 @@
 
   <section id="detail"></section>
 </main>
+
+<div id="modal">
+  <div class="box">
+    <h2 id="m-title">Add site</h2>
+    <label>Website address</label><input id="m-url" placeholder="https://yourbusiness.com" />
+    <label>Owner email</label><input id="m-email" placeholder="owner@business.com" />
+    <label>Business name (optional)</label><input id="m-name" placeholder="Lagos Bakery" />
+    <label>Important pages (one per line, e.g. /contact)</label><textarea id="m-pages"></textarea>
+    <p class="err" id="m-err"></p>
+    <div class="row"><button class="ghost" id="m-cancel">Cancel</button><button id="m-save">Save</button></div>
+  </div>
+</div>
 
 <script>
   const TZ = "Africa/Lagos";
@@ -108,8 +130,12 @@
   let token = localStorage.getItem("ph_admin_token") || "";
   let sites = [], sortKey = "status", sortDir = 1, timer = null, openSite = null;
 
-  async function api(params = "") {
-    const res = await fetch("/api/admin-data" + params, { headers: { Authorization: "Bearer " + token } });
+  async function api(params = "", method = "GET", body = null) {
+    const res = await fetch("/api/admin-data" + params, {
+      method,
+      headers: { Authorization: "Bearer " + token, ...(body ? { "Content-Type": "application/json" } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
     if (res.status === 401) throw Object.assign(new Error("Wrong password"), { auth: true });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
     return res.json();
@@ -218,7 +244,11 @@
       box.innerHTML = `
         <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
           <div><h2>${esc(s.name || s.url)}</h2><div class="muted"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a> &nbsp;|&nbsp; ${esc(s.owner_email || "no email")} &nbsp;|&nbsp; added ${fmt(s.added_at, { year: "numeric" })}</div></div>
-          <button class="ghost" style="margin-left:auto" onclick="document.getElementById('detail').style.display='none'">Close</button>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="ghost" id="d-edit">Edit</button>
+            <button class="danger" id="d-delete">Delete</button>
+            <button class="ghost" onclick="document.getElementById('detail').style.display='none'">Close</button>
+          </div>
         </div>
         <div class="cards" style="margin-top:16px">
           <div class="card"><div class="k">Status now</div><div class="v" style="font-size:18px">${open.length ? `<span class="dot down"></span>${open.length} open incident${open.length > 1 ? "s" : ""}` : '<span class="dot up"></span>All pages up'}</div></div>
@@ -237,6 +267,8 @@
         </div>
         <h3>Incident history</h3>
         <table><thead><tr><th>State</th><th>Page</th><th>Error</th><th>Detected</th><th>Resolved</th><th>Duration</th></tr></thead><tbody>${incHtml}</tbody></table>`;
+      $("d-edit").addEventListener("click", () => openModal(s));
+      $("d-delete").addEventListener("click", () => deleteSite(s));
     } catch (err) {
       box.innerHTML = `<p class="err">${esc(err.message)}</p>`;
     }
@@ -265,6 +297,39 @@
   $("q").addEventListener("input", renderTable);
   $("filter").addEventListener("change", renderTable);
   document.querySelectorAll("th[data-sort]").forEach((th) => th.addEventListener("click", () => { const k = th.dataset.sort; sortDir = sortKey === k ? -sortDir : 1; sortKey = k; renderTable(); }));
+
+  /* ---- Add / edit / delete ---- */
+  let editing = null;
+  function openModal(site = null) {
+    editing = site;
+    $("m-title").textContent = site ? "Edit site" : "Add site";
+    $("m-url").value = site?.url || ""; $("m-email").value = site?.owner_email || ""; $("m-name").value = site?.name || "";
+    $("m-pages").value = (site?.important_pages || []).map((u) => { try { return new URL(u).pathname; } catch { return u; } }).join(String.fromCharCode(10));
+    $("m-err").textContent = ""; $("modal").classList.add("show"); $("m-url").focus();
+  }
+  function closeModal() { $("modal").classList.remove("show"); editing = null; }
+  async function saveModal() {
+    const body = { url: $("m-url").value.trim(), owner_email: $("m-email").value.trim(), name: $("m-name").value.trim(), important_pages: $("m-pages").value };
+    if (!body.url || !body.owner_email) { $("m-err").textContent = "Website address and owner email are required."; return; }
+    $("m-save").disabled = true;
+    try {
+      if (editing) await api("?site=" + editing.id, "PATCH", body); else await api("", "POST", body);
+      closeModal(); await load();
+      if (editing) openDetail(editing.id);
+    } catch (err) { $("m-err").textContent = err.message; }
+    finally { $("m-save").disabled = false; }
+  }
+  async function deleteSite(site) {
+    const ok = confirm(`Delete ${site.name || site.url}?` + String.fromCharCode(10) + String.fromCharCode(10) + `This removes the site, all its checks, scores and incidents. ${site.owner_email || "The owner"} will stop receiving emails. This cannot be undone.`);
+    if (!ok) return;
+    try { await api("?site=" + site.id, "DELETE"); openSite = null; $("detail").style.display = "none"; await load(); }
+    catch (err) { alert("Delete failed: " + err.message); }
+  }
+  $("add-site").addEventListener("click", () => openModal());
+  $("m-cancel").addEventListener("click", closeModal);
+  $("m-save").addEventListener("click", saveModal);
+  $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
   if (token) load(); else showLogin();
   timer = setInterval(() => { if (token) load(); }, 60000);

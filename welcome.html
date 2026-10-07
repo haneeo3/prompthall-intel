@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PromptHall Monitor — Know the moment your website goes down</title>
-<meta name="description" content="We check your website every 5 minutes and email you within minutes if a page goes down — in plain English, with the details your developer needs." />
+<title>Welcome to the PromptHall pilot</title>
+<meta name="description" content="What the free PromptHall pilot includes, when you will hear from us, and how to ask for a fix." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
@@ -121,193 +121,116 @@
   .result .actions { margin-top: 32px; }
   .link { color: var(--ink-2); font-size: 15px; border-bottom: 1px solid var(--rule-2); padding-bottom: 2px; cursor: pointer; }
   .link:hover { color: var(--ink); border-color: var(--ink); }
+
+  /* Welcome page */
+  .block { padding: 64px 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 48px; }
+  @media (max-width: 900px) { .block { grid-template-columns: 1fr; gap: 20px; padding: 48px 0; } }
+  .block h2 { font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.03em; font-weight: 500; margin: 0; line-height: 1.1; }
+  .block h2 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent); }
+  .block p { color: var(--ink-2); font-size: 16.5px; line-height: 1.65; margin: 0 0 16px; max-width: 60ch; }
+  .block p strong { color: var(--ink); font-weight: 500; }
+  .timeline { list-style: none; margin: 8px 0 0; padding: 0; }
+  .timeline li { display: grid; grid-template-columns: 150px 1fr; gap: 20px; padding: 16px 0; border-top: 1px solid var(--rule); }
+  .timeline li:first-child { border-top: 0; padding-top: 0; }
+  .timeline .when { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); padding-top: 4px; }
+  .timeline b { display: block; font-weight: 500; margin-bottom: 4px; }
+  .timeline p { font-size: 14.5px; margin: 0; }
+  @media (max-width: 640px) { .timeline li { grid-template-columns: 1fr; gap: 6px; } }
+  .yes { color: var(--ok); font-family: var(--mono); font-size: 12px; margin-right: 10px; }
+  .no  { color: var(--ink-3); font-family: var(--mono); font-size: 12px; margin-right: 10px; }
+  .plain { list-style: none; margin: 0; padding: 0; }
+  .plain li { padding: 10px 0; border-top: 1px solid var(--rule); font-size: 15.5px; color: var(--ink-2); }
+  .plain li:first-child { border-top: 0; padding-top: 0; }
+  .plain li strong { color: var(--ink); font-weight: 500; }
+  .end { padding: 80px 0 96px; text-align: left; }
+  .end h2 { font-size: clamp(32px, 5vw, 64px); letter-spacing: -0.035em; font-weight: 500; line-height: 1; margin: 0 0 28px; max-width: 16ch; }
+  .end h2 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent); }
 </style>
 </head>
 <body>
-
 <div class="wrap">
   <nav>
     <a class="brand" href="/"><i></i>PromptHall <span>Monitor</span></a>
     <ul>
-      <li><a href="/welcome.html">The pilot</a></li>
+      <li><a href="/">Start monitoring</a></li>
       <li><a href="https://prompthall.space">prompthall.space</a></li>
       <li><a class="admin" href="/admin.html">Admin</a></li>
     </ul>
   </nav>
 
   <section class="hero">
-    <p class="kicker">Website monitoring · every 5 minutes · Lagos time</p>
-    <h1>Know the moment your website <em>goes down.</em></h1>
-    <p>A plain-English email within minutes of a page breaking — what happened, what it means for your business, and exactly what to tell your developer. Another when it's fixed. A report every Monday. Nothing else.</p>
+    <p class="kicker">Free pilot · 2026</p>
+    <h1>Welcome to the <em>pilot.</em></h1>
+    <p>You're one of the first businesses using PromptHall. This page explains exactly what you get, when you'll hear from us, and what to do when something breaks. Keep it; it's short.</p>
   </section>
 
-  <div class="cols">
-    <section>
-      <p class="section-label">Start monitoring</p>
-      <form id="signup-form" novalidate>
-        <div class="field">
-          <label for="url">Website address</label>
-          <input type="url" id="url" placeholder="yourbusiness.com" required autocomplete="url" inputmode="url" />
-        </div>
-        <div class="two">
-          <div class="field">
-            <label for="email">Your email</label>
-            <input type="email" id="email" placeholder="you@business.com" required autocomplete="email" />
-          </div>
-          <div class="field">
-            <label for="name">Business name <b>optional</b></label>
-            <input type="text" id="name" placeholder="Lagos Bakery" autocomplete="organization" />
-          </div>
-        </div>
-        <div class="field">
-          <label for="pages-input">Pages that matter most <b>optional</b></label>
-          <div class="tags" id="tags">
-            <input type="text" id="pages-input" placeholder="/contact" autocomplete="off" />
-          </div>
-          <p class="help">Type a page like <kbd>/book</kbd> or <kbd>/checkout</kbd> and press <kbd>Enter</kbd>. We check these first and explain what an outage means for your business.</p>
-        </div>
-        <div class="actions">
-          <button type="submit" class="cta" id="submit-btn">Start monitoring <span class="arr">→</span></button>
-          <small>Free. No card. First report in about a minute.</small>
-        </div>
-        <p class="error" id="error"></p>
-      </form>
-    </section>
+  <section class="block">
+    <h2>What the pilot <em>is</em></h2>
+    <div>
+      <p>For the length of the pilot, PromptHall watches your website <strong>free of charge</strong>. No card, no contract, no catch. In return we ask one thing: when you get an email from us, tell us whether it was useful, confusing or late. That feedback is how we're building the service.</p>
+      <p>When the pilot ends we'll tell you in advance, show you the paid plans, and you decide. Nothing switches on by itself.</p>
+    </div>
+  </section>
 
-    <aside id="what">
-      <p class="section-label">What you get</p>
-      <ol class="list">
-        <li><div><b>Checked every five minutes</b><p>Homepage, the pages you name, and up to ten more we find on your site. A problem has to show up twice, thirty seconds apart, before we tell you.</p></div></li>
-        <li><div><b>One email when it breaks, one when it's fixed</b><p>No noise in between. Written for the owner, with a short technical section at the bottom for whoever fixes it.</p></div></li>
-        <li><div><b>Monday morning report</b><p>Speed score, what changed, every outage of the week and total downtime. One email, 8am.</p></div></li>
-      </ol>
-      <p class="quote">"Your booking page is down. Customers cannot book right now. We've emailed your developer the details."</p>
-      <small>— the first line of an alert</small>
-    </aside>
-  </div>
+  <section class="block">
+    <h2>What you <em>get</em></h2>
+    <ul class="plain">
+      <li><span class="yes">YES</span><strong>A check every 5 minutes</strong>, around the clock, of your homepage, the pages you told us matter, and up to ten more we find on your site.</li>
+      <li><span class="yes">YES</span><strong>An email the moment a page breaks</strong> — in plain English, with what it means for your business and the technical details for your developer at the bottom.</li>
+      <li><span class="yes">YES</span><strong>An email when it's fixed</strong>, with how long it was down.</li>
+      <li><span class="yes">YES</span><strong>A report every Monday at 8am</strong>: speed score, what changed, every outage of the week, total downtime.</li>
+      <li><span class="yes">YES</span><strong>Help getting it fixed</strong> — see below.</li>
+      <li><span class="no">NOT YET</span>WhatsApp or SMS alerts. Email only during the pilot.</li>
+      <li><span class="no">NOT YET</span>Alerts for pages that are slow but still working. Those appear in the Monday report.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2>When you'll <em>hear from us</em></h2>
+    <ul class="timeline">
+      <li><span class="when">Right away</span><div><b>Your first report</b><p>About a minute after you sign up. Speed score, pages checked, what to fix.</p></div></li>
+      <li><span class="when">Within 5–7 min</span><div><b>"Issue detected"</b><p>A page fails a check, we check again 30 seconds later, and if it's still broken we email you. One email per problem — not one every five minutes.</p></div></li>
+      <li><span class="when">Within 5–7 min</span><div><b>"Issue resolved"</b><p>As soon as the page passes two checks in a row. The email says how long it was down.</p></div></li>
+      <li><span class="when">Monday 8:00am</span><div><b>Weekly report</b><p>Every Monday, Lagos time, whether or not anything happened.</p></div></li>
+      <li><span class="when">Otherwise</span><div><b>Silence</b><p>If nothing breaks, you won't hear from us between Mondays. That's the point.</p></div></li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2>How to get it <em>fixed</em></h2>
+    <div>
+      <p>Every alert has a grey box at the bottom titled <strong>FOR YOUR DEVELOPER</strong>. It holds the exact error, when it happened, where to look and a command to reproduce it. <strong>Forward the whole email to your developer</strong> — that box is usually all they need.</p>
+      <p>Don't have a developer, or they're not responding? <strong>Reply to the alert email</strong> with "please fix this" and we'll connect you to one of the developers we work with. During the pilot we'll quote before any work starts, and the first diagnosis is free.</p>
+      <p>Not sure if something is really broken, or a sentence in an email didn't make sense? Reply and say so — we read every reply.</p>
+      <div class="actions" style="margin-top:28px">
+        <a class="cta" href="mailto:prompthall@gmail.com?subject=Please%20fix%20my%20website&body=Website%3A%20%0AWhat%20the%20alert%20said%3A%20%0A">Request a fix <span class="arr">→</span></a>
+        <small>Or just reply to any PromptHall email.</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What we <em>ask of you</em></h2>
+    <ul class="plain">
+      <li><strong>Add your important pages.</strong> Contact, booking, checkout. We check those first and the alert will say "customers can't book" instead of "a page is down".</li>
+      <li><strong>Whitelist monitor@prompthall.space</strong> so alerts don't land in spam. In Gmail: open the first report, click the three dots, "Filter messages like this", "Never send to spam".</li>
+      <li><strong>Tell us when we get it wrong.</strong> An alert for a site that was fine, an alert that came late, or no alert for a site that was down — reply and tell us the time.</li>
+    </ul>
+  </section>
+
+  <section class="end">
+    <p class="kicker">Ready</p>
+    <h2>That's everything. <em>Go run your business.</em></h2>
+    <div class="actions">
+      <a class="cta" href="/">Add a site <span class="arr">→</span></a>
+      <a class="link" href="https://prompthall.space">prompthall.space</a>
+    </div>
+  </section>
 
   <footer>
     <span>PromptHall Monitor — your website, our watch.</span>
     <span><a href="/admin.html">Admin</a></span>
   </footer>
 </div>
-
-<div class="overlay" id="overlay" role="dialog" aria-live="polite">
-  <div class="box" id="box">
-    <p class="kicker" id="ov-kicker">First check · running</p>
-    <h2>Checking <em id="ov-site">your website</em></h2>
-    <p class="sub">About a minute. We run a real Google speed test and visit your pages one by one.</p>
-    <div class="track"><i id="track-fill"></i></div>
-    <ol class="steps" id="steps">
-      <li><span class="i">01</span>Saving your site<span class="t"></span></li>
-      <li><span class="i">02</span>Running Google PageSpeed test<span class="t">30–60 s</span></li>
-      <li><span class="i">03</span>Visiting your pages<span class="t"></span></li>
-      <li><span class="i">04</span>Writing your first report<span class="t"></span></li>
-    </ol>
-    <p class="elapsed" id="elapsed">0 S ELAPSED</p>
-  </div>
-</div>
-
-<script>
-  const $ = (id) => document.getElementById(id);
-  const esc = (v) => String(v ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-
-  /* ---- Tag input for important pages ---- */
-  const tagsEl = $("tags"), pagesInput = $("pages-input");
-  const pages = [];
-  function renderTags() {
-    tagsEl.querySelectorAll(".tag").forEach((t) => t.remove());
-    pages.forEach((p, i) => {
-      const el = document.createElement("span");
-      el.className = "tag";
-      el.innerHTML = `${esc(p)}<button type="button" aria-label="Remove ${esc(p)}">×</button>`;
-      el.querySelector("button").addEventListener("click", () => { pages.splice(i, 1); renderTags(); pagesInput.focus(); });
-      tagsEl.insertBefore(el, pagesInput);
-    });
-    pagesInput.placeholder = pages.length ? "" : "/contact";
-  }
-  function addTag(raw) {
-    let v = raw.trim().replace(/[,;]+$/, "");
-    if (!v) return;
-    if (!/^https?:/i.test(v) && !v.startsWith("/")) v = "/" + v;
-    if (pages.length >= 10 || pages.includes(v)) return;
-    pages.push(v); renderTags();
-  }
-  pagesInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === "," || e.key === "Tab" && pagesInput.value.trim()) {
-      e.preventDefault(); addTag(pagesInput.value); pagesInput.value = "";
-    } else if (e.key === "Backspace" && !pagesInput.value && pages.length) {
-      pages.pop(); renderTags();
-    }
-  });
-  pagesInput.addEventListener("blur", () => { if (pagesInput.value.trim()) { addTag(pagesInput.value); pagesInput.value = ""; } });
-  pagesInput.addEventListener("paste", (e) => {
-    const text = (e.clipboardData || window.clipboardData).getData("text");
-    if (/[,;]|[^ -~]/.test(text)) { e.preventDefault(); text.split(/[,;]|[^ -~]+/).forEach(addTag); }
-  });
-  tagsEl.addEventListener("click", (e) => { if (e.target === tagsEl) pagesInput.focus(); });
-
-  /* ---- Progress ---- */
-  const overlay = $("overlay"), box = $("box"), originalBox = box.innerHTML;
-  const PLAN = [[0, 3], [3, 35], [35, 50], [50, 1e9]];
-  let startedAt = 0, timer = null;
-  const stepEls = () => [...document.querySelectorAll("#steps li")];
-  function setStep(i) { stepEls().forEach((li, k) => { li.classList.toggle("done", k < i); li.classList.toggle("active", k === i); }); }
-  function tick() {
-    const s = (Date.now() - startedAt) / 1000;
-    $("elapsed").textContent = `${Math.floor(s)} S ELAPSED`;
-    setStep(Math.min(3, PLAN.findIndex(([a, b]) => s >= a && s < b)));
-    $("track-fill").style.width = Math.min(92, 100 * (1 - Math.exp(-s / 35))).toFixed(1) + "%";
-    if (s > 75) stepEls()[3].querySelector(".t").textContent = "almost there";
-  }
-  function showProgress(url) {
-    box.innerHTML = originalBox;
-    $("ov-site").textContent = url.replace(/^https?:[/][/]/, "");
-    overlay.classList.add("show"); startedAt = Date.now(); tick(); timer = setInterval(tick, 500);
-  }
-  function showResult(data, email, url) {
-    clearInterval(timer); $("track-fill").style.width = "100%"; setStep(4);
-    const score = data.score, cls = score >= 90 ? "good" : score >= 50 ? "mid" : "bad";
-    const word = score >= 90 ? "fast" : score >= 50 ? "could be faster" : "slow";
-    setTimeout(() => {
-      box.innerHTML = `
-        <p class="kicker">First check · complete</p>
-        <div class="result">
-          <div class="score"><b class="${cls}">${score}</b><span>/100 — ${word}</span></div>
-          <p>That's how fast <strong>${esc(url.replace(/^https?:[/][/]/, ""))}</strong> loads on a phone. The full report — pages checked, what to fix, details for your developer — is on its way to <strong>${esc(email)}</strong>. Check spam if it isn't there in two minutes.</p>
-          <p>${data.updated ? "This site was already on our list, so we've updated it." : "We're now checking it every five minutes."} You'll hear from us only if something breaks, when it's fixed, and on Monday mornings.</p>
-          <div class="actions">
-            <button class="cta" id="again">Add another site <span class="arr">→</span></button>
-            <a class="link" href="/welcome.html">What the pilot includes</a>
-          </div>
-        </div>`;
-      $("again").addEventListener("click", () => { overlay.classList.remove("show"); form.reset(); pages.length = 0; renderTags(); $("url").focus(); });
-    }, 500);
-  }
-
-  /* ---- Submit ---- */
-  const form = $("signup-form"), submitBtn = $("submit-btn"), errorEl = $("error");
-  const showError = (m) => { errorEl.textContent = m; errorEl.style.display = "block"; };
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault(); errorEl.style.display = "none";
-    if (pagesInput.value.trim()) { addTag(pagesInput.value); pagesInput.value = ""; }
-    let url = $("url").value.trim();
-    const email = $("email").value.trim(), name = $("name").value.trim() || null;
-    if (url && !/^https?:[/][/]/i.test(url)) url = "https://" + url;
-    try { new URL(url); } catch { return showError("Please enter a website address, like yourbusiness.com"); }
-    if (!/^[^@ ]+@[^@ ]+[.][^@ ]+$/.test(email)) return showError("Please enter a valid email address.");
-
-    submitBtn.disabled = true; showProgress(url);
-    try {
-      const res = await fetch("/api/add-site", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url, email, name, important_pages: pages }) });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Something went wrong, please try again.");
-      showResult(data, email, url);
-    } catch (err) {
-      clearInterval(timer); overlay.classList.remove("show");
-      showError(err.message || "Something went wrong, please try again.");
-    } finally { submitBtn.disabled = false; }
-  });
-</script>
 </body>
 </html>

@@ -8,39 +8,11 @@ import { Resend } from "resend";
 import { checkSite } from "../site-checker.js";
 import { buildSummary } from "../digest-summary.js";
 import { renderEmailHtml } from "../email-template.js";
+import { normaliseSiteUrl, normaliseImportantPages } from "../site-utils.js";
 
 // Server-side only: never ship the service_role key to the browser.
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-const MAX_IMPORTANT_PAGES = 10;
-
-// "https://Example.com/" -> "https://example.com". Keeps paths as typed.
-function normaliseSiteUrl(input) {
-  const u = new URL(input.trim());
-  if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("URL must start with http:// or https://");
-  u.hostname = u.hostname.toLowerCase();
-  u.hash = "";
-  if (u.pathname === "/" && !u.search) return u.origin;
-  return u.toString().replace(/[/]+$/, "");
-}
-
-// Accepts full URLs or paths like "/contact"; drops anything not on the site.
-function normaliseImportantPages(list, siteUrl) {
-  if (!Array.isArray(list)) return [];
-  const siteHost = new URL(siteUrl).hostname;
-  const out = new Set();
-  for (const raw of list) {
-    if (typeof raw !== "string" || !raw.trim()) continue;
-    try {
-      const u = new URL(raw.trim(), siteUrl + "/");
-      u.hash = "";
-      if (u.hostname.toLowerCase() === siteHost) out.add(u.toString());
-    } catch {}
-    if (out.size >= MAX_IMPORTANT_PAGES) break;
-  }
-  return [...out];
-}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
