@@ -3,43 +3,34 @@
 // free pilot is, when they will hear from us, how to request a fix, how to stop.
 
 import { Resend } from "resend";
-import { APP_URL, FROM, esc, fixMailto, cancelUrl, emailFooterHtml } from "./links.js";
+import { FROM, esc, fixMailto, cancelUrl } from "./links.js";
+import { layout, h1, p, small, label, strong, link, button, panel, pill } from "./email-layout.js";
 
 export function renderWelcomeHtml(site) {
   const name = site.name || site.url;
-  const P = 'style="margin:0 0 6px;font-size:14px;color:#374151;line-height:1.6;"';
-  return `
-    <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;background:#ffffff;">
-      <div style="margin-bottom:24px;"><span style="font-size:13px;font-weight:600;color:#7C5CFF;letter-spacing:1px;">PROMPTHALL.SPACE</span></div>
+  const body = `
+    ${pill("Welcome · free pilot", "purple")}
+    <div style="height:14px;"></div>
+    ${h1(`We're now watching ${esc(name)}.`)}
+    ${p(`You're using PromptHall ${strong("free of charge")} during our pilot — no card, no contract. In return we only ask one thing: tell us when an email was useful, confusing or late. That's how we're building this.`)}
 
-      <p style="margin:0 0 4px;font-size:13px;color:#6B7280;">Welcome to the free pilot</p>
-      <h2 style="margin:0 0 16px;font-size:22px;color:#111827;">We're now watching ${esc(name)}.</h2>
+    ${panel(`
+      ${label("What happens from here")}
+      ${p(`${strong("In about a minute")} — your first report lands in a separate email.`, "margin-bottom:8px;")}
+      ${p(`${strong("Every 5 minutes")} — we check your site. If a page breaks you get one email within minutes, and another when it's fixed.`, "margin-bottom:8px;")}
+      ${p(`${strong("Every Monday, 8am")} — a report of the week. Otherwise, silence.`, "margin-bottom:0;")}
+    `)}
 
-      <p style="font-size:15px;color:#374151;line-height:1.6;margin:0 0 16px;">
-        You're using PromptHall <strong>free of charge</strong> during our pilot. No card, no contract.
-        In return we only ask that you tell us when an email was useful, confusing or late.
-      </p>
+    ${panel(`
+      ${label("If something breaks and you need it fixed")}
+      ${p(`Every alert ends with a ${strong("“For your developer”")} section. Forward the email and they can start straight away.`, "margin-bottom:8px;")}
+      ${p(`No developer, or they're not responding? Request a fix and we'll connect you with one of ours. You get a quote before any work starts.`, "margin-bottom:12px;")}
+      ${button(fixMailto(site), "Request a fix")}
+    `, "purple")}
 
-      <div style="background:#F8FAFC;border-radius:8px;padding:16px;margin:0 0 20px;">
-        <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#111827;">What happens from here</p>
-        <p ${P}><strong>In about a minute</strong> — your first report arrives in a separate email.</p>
-        <p ${P}><strong>Every 5 minutes</strong> — we check your site. If a page breaks, you get one email within minutes; another when it's fixed.</p>
-        <p ${P}><strong>Every Monday, 8am</strong> — a report of the week. Otherwise, silence.</p>
-      </div>
-
-      <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:16px;margin:0 0 20px;">
-        <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827;">If something breaks and you need it fixed</p>
-        <p ${P}>
-          Every alert has a <strong>"For your developer"</strong> section — forward it and they can start.
-          No developer? <a href="${fixMailto(site)}" style="color:#7C5CFF;">Request a fix</a> or just reply to any of our emails.
-          We'll connect you to one of ours; you get a quote before any work starts.
-        </p>
-      </div>
-
-      <p ${P}>Everything about the pilot, on one page: <a href="${APP_URL}/welcome.html" style="color:#7C5CFF;">${esc(APP_URL.replace(/^https?:[/][/]/, ""))}/welcome.html</a></p>
-      <p ${P}>Changed your mind? <a href="${cancelUrl(site)}" style="color:#6B7280;">Stop monitoring this site</a> — one click, no questions.</p>
-      ${emailFooterHtml(site)}
-    </div>`;
+    ${small(`Changed your mind? ${link(cancelUrl(site), "Stop monitoring this site")} — one click, no questions.`)}
+  `;
+  return layout(site, { preheader: `You're on the free PromptHall pilot. Your first report is on its way.`, kicker: "Welcome", body });
 }
 
 export async function sendWelcomeEmail(site) {

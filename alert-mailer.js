@@ -5,10 +5,10 @@
 // so the owner can forward the email as-is and the developer can act on it.
 
 import { Resend } from "resend";
-import { emailFooterHtml } from "./links.js";
+import { FROM, esc } from "./links.js";
+import { layout, h1, p, small, strong, panel, pill, label, techTable, devBox, BRAND, MONO } from "./email-layout.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = "PromptHall <monitor@prompthall.space>";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -94,13 +94,11 @@ function developerNotes(page) {
   }
 }
 
-// The grey "For your developer" box. Same facts the incident row stores.
+// The "For your developer" box. Same facts the incident row stores.
 function technicalBlockHtml(page, { extraRows = [], recovered = false } = {}) {
-  const result =
-    page.status === null
-      ? `No response (${page.errorType || "network"}: ${page.error || "unknown error"})`
-      : `HTTP ${page.status}`;
-
+  const result = page.status === null
+    ? `No response (${page.errorType || "network"}: ${page.error || "unknown error"})`
+    : `HTTP ${page.status}`;
   const rows = [
     ["URL", page.url],
     page.finalUrl ? ["Redirected to", page.finalUrl] : null,
@@ -113,70 +111,30 @@ function technicalBlockHtml(page, { extraRows = [], recovered = false } = {}) {
     page.contentType ? ["Content-Type", page.contentType] : null,
     page.bodySnippet ? ["Response body", page.bodySnippet] : null,
     ...extraRows,
-  ].filter(Boolean);
-
-  const rowsHtml = rows
-    .map(
-      ([k, v]) =>
-        `<tr><td style="padding:3px 12px 3px 0;color:#6B7280;white-space:nowrap;vertical-align:top;">${escapeHtml(k)}</td>` +
-        `<td style="padding:3px 0;color:#111827;word-break:break-all;">${escapeHtml(v)}</td></tr>`
-    )
-    .join("");
-
-  const curl = `curl -sS -o /dev/null -w "%{http_code} in %{time_total}s" -L --max-time 10 "${page.url}"`;
-
-  let notesHtml = "";
+  ];
+  let notes = "";
   if (!recovered) {
-    const notes = developerNotes(page);
-    notesHtml = `
-      <p style="margin:12px 0 4px;font-size:12px;color:#6B7280;">Likely cause</p>
-      <p style="margin:0;font-size:13px;color:#111827;">${escapeHtml(notes.cause)}</p>
-      <p style="margin:12px 0 4px;font-size:12px;color:#6B7280;">Where to look</p>
-      <p style="margin:0;font-size:13px;color:#111827;">${escapeHtml(notes.lookAt)}</p>
-      <p style="margin:12px 0 4px;font-size:12px;color:#6B7280;">Reproduce</p>
-      <pre style="margin:0;padding:8px;background:#111827;color:#E5E7EB;border-radius:6px;font-size:12px;white-space:pre-wrap;word-break:break-all;">${escapeHtml(curl)}</pre>`;
+    const n = developerNotes(page);
+    const curl = `curl -sS -o /dev/null -w "%{http_code} in %{time_total}s" -L --max-time 10 "${page.url}"`;
+    notes = `
+      <div style="height:12px;"></div>${label("Likely cause")}${p(esc(n.cause), "font-size:13px;margin-bottom:10px;")}
+      ${label("Where to look")}${p(esc(n.lookAt), "font-size:13px;margin-bottom:10px;")}
+      ${label("Reproduce")}<pre style="margin:0;padding:10px 12px;background:${BRAND.ink};color:#E9E6F6;border-radius:8px;font-family:${MONO};font-size:12px;white-space:pre-wrap;word-break:break-all;">${esc(curl)}</pre>`;
   }
-
-  return `
-    <div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;margin-bottom:24px;font-family:Menlo,Consolas,monospace;">
-      <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#374151;letter-spacing:0.5px;font-family:Arial,sans-serif;">FOR YOUR DEVELOPER</p>
-      <table style="border-collapse:collapse;font-size:12px;width:100%;">${rowsHtml}</table>
-      ${notesHtml}
-    </div>`;
-}
-
-function headerHtml() {
-  return `<div style="margin-bottom:24px;"><span style="font-size:13px;font-weight:600;color:#6366F1;letter-spacing:1px;">PROMPTHALL.SPACE</span></div>`;
-}
-
-function footerHtml(site) {
-  return emailFooterHtml(site);
+  return devBox(techTable(rows) + notes);
 }
 
 export function renderIssueAlertHtml(site, page, description, recommendation) {
-  return `
-    <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;background:#ffffff;">
-      ${headerHtml()}
-      <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:16px;margin-bottom:24px;">
-        <p style="margin:0;font-size:15px;font-weight:700;color:#991B1B;">🔴 Issue detected</p>
-        <p style="margin:6px 0 0;font-size:14px;color:#7F1D1D;">${escapeHtml(site.name || site.url)}</p>
-      </div>
-
-      <p style="font-size:16px;color:#111827;font-weight:600;margin:0 0 8px;">${escapeHtml(description)}</p>
-      <p style="font-size:14px;color:#374151;margin:0 0 8px;"><strong>What this means for you:</strong> ${escapeHtml(businessImpact(page))}</p>
-      <p style="font-size:14px;color:#374151;margin:0 0 24px;">Affected page: <strong>${escapeHtml(page.url)}</strong></p>
-
-      <div style="background:#F8FAFC;border-radius:8px;padding:16px;margin-bottom:24px;">
-        <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827;">What to do</p>
-        <p style="margin:0;font-size:14px;color:#374151;">${escapeHtml(recommendation)}</p>
-        <p style="margin:8px 0 0;font-size:14px;color:#374151;">You can forward this email to your web developer or hosting provider. The details they need are at the bottom.</p>
-      </div>
-
-      ${technicalBlockHtml(page)}
-
-      <p style="font-size:14px;color:#374151;">PromptHall is still watching your website and will email you as soon as this is resolved.</p>
-      ${footerHtml(site)}
-    </div>`;
+  const body = `
+    ${pill("Issue detected", "bad")}
+    <div style="height:14px;"></div>
+    ${h1(esc(description))}
+    ${p(`${strong("What this means for you:")} ${esc(businessImpact(page))}`)}
+    ${p(`Affected page: ${strong(esc(page.url))}`, "font-size:14px;")}
+    ${panel(`${label("What to do")}${p(esc(recommendation), "margin-bottom:8px;")}${p("You can forward this email to your web developer or hosting provider — everything they need is in the box below.", "margin-bottom:0;font-size:14px;")}`)}
+    ${technicalBlockHtml(page)}
+    ${small("PromptHall is still watching your website and will email you as soon as this is resolved.")}`;
+  return layout(site, { preheader: `${description} We'll email you when it's resolved.`, kicker: "Alert", body });
 }
 
 export function renderRecoveryAlertHtml(site, page, durationText, { detectedAt, resolvedAt } = {}) {
@@ -184,41 +142,27 @@ export function renderRecoveryAlertHtml(site, page, durationText, { detectedAt, 
   if (detectedAt) extraRows.push(["Down since", `${detectedAt} (UTC)`]);
   if (resolvedAt) extraRows.push(["Back up at", `${resolvedAt} (UTC)`]);
   extraRows.push(["Total downtime", durationText]);
-
-  return `
-    <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;background:#ffffff;">
-      ${headerHtml()}
-      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px;margin-bottom:24px;">
-        <p style="margin:0;font-size:15px;font-weight:700;color:#166534;">🟢 Issue resolved</p>
-        <p style="margin:6px 0 0;font-size:14px;color:#14532D;">${escapeHtml(site.name || site.url)}</p>
-      </div>
-
-      <p style="font-size:16px;color:#111827;font-weight:600;margin:0 0 8px;">Your ${escapeHtml(friendlyPageName(page.url))} is working normally again.</p>
-      <p style="font-size:14px;color:#374151;margin:0 0 24px;">PromptHall confirmed the page is responding correctly on two checks in a row. The issue lasted <strong>${escapeHtml(durationText)}</strong>.</p>
-
-      ${technicalBlockHtml(page, { extraRows, recovered: true })}
-
-      <p style="font-size:14px;color:#374151;">No further action is needed. PromptHall will keep monitoring your website.</p>
-      ${footerHtml(site)}
-    </div>`;
+  const body = `
+    ${pill("Issue resolved", "ok")}
+    <div style="height:14px;"></div>
+    ${h1(`Your ${esc(friendlyPageName(page.url))} is working normally again.`)}
+    ${p(`PromptHall confirmed the page is responding correctly on two checks in a row. The issue lasted ${strong(esc(durationText))}.`)}
+    ${technicalBlockHtml(page, { extraRows, recovered: true })}
+    ${small("No further action is needed. PromptHall will keep monitoring your website.")}`;
+  return layout(site, { preheader: `Resolved after ${durationText}.`, kicker: "Resolved", body });
 }
 
 async function send(site, subject, html, kind) {
   const { error } = await resend.emails.send({ from: FROM, to: site.owner_email, subject, html });
-  if (error) {
-    console.error(`Failed to send ${kind} alert for ${site.url}:`, error.message || error);
-    return false;
-  }
+  if (error) { console.error(`Failed to send ${kind} alert for ${site.url}:`, error.message || error); return false; }
   console.log(`  [alert] ${kind} email sent to ${site.owner_email}`);
   return true;
 }
 
 export function sendIssueAlert(site, page, description, recommendation) {
-  const subject = `Issue detected on ${site.name || site.url}`;
-  return send(site, subject, renderIssueAlertHtml(site, page, description, recommendation), "issue");
+  return send(site, `Issue detected on ${site.name || site.url}`, renderIssueAlertHtml(site, page, description, recommendation), "issue");
 }
 
 export function sendRecoveryAlert(site, page, durationText, times = {}) {
-  const subject = `Issue resolved on ${site.name || site.url}`;
-  return send(site, subject, renderRecoveryAlertHtml(site, page, durationText, times), "recovery");
+  return send(site, `Issue resolved on ${site.name || site.url}`, renderRecoveryAlertHtml(site, page, durationText, times), "recovery");
 }

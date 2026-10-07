@@ -1,131 +1,74 @@
 // email-template.js
-// Weekly report / first report email. Same structure as the alert emails:
-// plain language for the owner on top, a "For your developer" box with the
-// technical facts at the bottom. Used by send-digest.js and api/add-site.js.
+// Weekly report / first report email on the shared PromptHall layout.
+// Plain language for the owner on top, "For your developer" box at the bottom.
+// Used by send-digest.js and onboard-site.js.
 
-import { emailFooterHtml } from "./links.js";
+import { esc } from "./links.js";
+import { layout, h1, p, small, label, strong, panel, pill, techTable, devBox, BRAND, FONT } from "./email-layout.js";
 
-function escapeHtml(value) {
-  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
+const scoreColor = (s) => (s >= 90 ? BRAND.ok : s >= 50 ? BRAND.warn : BRAND.bad);
+const scoreWord = (s) => (s >= 90 ? "Fast" : s >= 50 ? "Could be faster" : "Slow");
+const fmtTime = (iso) => (iso ? new Date(iso).toISOString().replace("T", " ").slice(0, 16) + " UTC" : "");
 
-function scoreColor(score) {
-  if (score >= 90) return "#15803D";
-  if (score >= 50) return "#B45309";
-  return "#B91C1C";
-}
-
-function scoreWord(score) {
-  if (score >= 90) return "Fast";
-  if (score >= 50) return "Could be faster";
-  return "Slow";
-}
-
-function fmtTime(iso) {
-  return iso ? new Date(iso).toISOString().replace("T", " ").slice(0, 16) + " UTC" : "";
-}
-
-function row(k, v) {
-  return (
-    `<tr><td style="padding:3px 12px 3px 0;color:#6B7280;white-space:nowrap;vertical-align:top;">${escapeHtml(k)}</td>` +
-    `<td style="padding:3px 0;color:#111827;word-break:break-all;">${escapeHtml(v)}</td></tr>`
-  );
-}
-
-// "This week" outage list, in plain language.
 function incidentsHtml(summary) {
   if (summary.isFirstReport) return "";
   const items = summary.incidents;
-  const body =
-    items.length === 0
-      ? `<p style="margin:0;font-size:14px;color:#166534;">🟢 No outages detected. Every page we checked stayed up all week.</p>`
-      : items
-          .map(
-            (i) =>
-              `<p style="margin:0 0 8px;font-size:14px;color:#374151;">${i.open ? "🔴" : "🟠"} <strong>${escapeHtml(i.page_url)}</strong><br/>` +
-              `${i.open ? "Still down" : "Was down"} for ${escapeHtml(i.durationText)}, from ${escapeHtml(fmtTime(i.detected_at))}` +
-              `${i.open ? "." : ` until ${escapeHtml(fmtTime(i.resolved_at))}.`}</p>`
-          )
-          .join("") +
-        `<p style="margin:8px 0 0;font-size:13px;color:#6B7280;">Total downtime: <strong>${escapeHtml(summary.totalDowntimeText)}</strong>. You were emailed when each of these started and ended.</p>`;
-
-  return `
-      <div style="margin-bottom:24px;">
-        <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#111827;letter-spacing:0.5px;">THIS WEEK</p>
-        ${body}
-      </div>`;
+  if (items.length === 0) {
+    return panel(`${label("This week")}${p("🟢 No outages detected. Every page we checked stayed up all week.", "margin-bottom:0;color:" + BRAND.ok + ";")}`, "ok");
+  }
+  const rows = items.map((i) =>
+    p(`${i.open ? "🔴" : "🟠"} ${strong(esc(i.page_url))}<br/>${i.open ? "Still down" : "Was down"} for ${esc(i.durationText)}, from ${esc(fmtTime(i.detected_at))}${i.open ? "." : ` until ${esc(fmtTime(i.resolved_at))}.`}`, "font-size:14px;margin-bottom:10px;")
+  ).join("");
+  return panel(`${label("This week")}${rows}${small(`Total downtime: ${strong(esc(summary.totalDowntimeText))}. You were emailed when each of these started and ended.`)}`, items.some((i) => i.open) ? "bad" : "warn");
 }
 
-function technicalBlockHtml(summary) {
+function technicalBlockHtml(site, summary) {
   const l = summary.latest || {};
   const rows = [
-    row("Performance score", `${summary.score}/100 (mobile, Google PageSpeed)`),
-    row("Largest Contentful Paint", `${l.lcp ?? "-"} (target under 2.5 s)`),
-    row("Cumulative Layout Shift", `${l.cls ?? "-"} (target under 0.1)`),
-    row("Total Blocking Time", `${l.tbt ?? "-"} (target under 200 ms)`),
-    row("Pages crawled", `${l.pages_checked ?? summary.brokenPages.length + summary.slowPages.length}`),
+    ["Performance score", `${summary.score}/100 (mobile, Google PageSpeed)`],
+    ["Largest Contentful Paint", `${l.lcp ?? "-"} (target under 2.5 s)`],
+    ["Cumulative Layout Shift", `${l.cls ?? "-"} (target under 0.1)`],
+    ["Total Blocking Time", `${l.tbt ?? "-"} (target under 200 ms)`],
+    ["Pages crawled", `${l.pages_checked ?? summary.brokenPages.length + summary.slowPages.length}`],
+    ...summary.brokenPages.map((pg) => ["Broken", `${pg.url} -> ${pg.status === null ? `no response (${pg.error || "timeout"})` : `HTTP ${pg.status}`}`]),
+    ...summary.slowPages.map((pg) => ["Slow", `${pg.url} -> ${(pg.responseTimeMs / 1000).toFixed(1)} s response`]),
+    ...summary.incidents.map((i) => ["Incident", `${i.page_url} | ${i.error_type || i.type}${i.status_code ? ` ${i.status_code}` : ""} | ${fmtTime(i.detected_at)} -> ${i.resolved_at ? fmtTime(i.resolved_at) : "open"}`]),
   ];
-  const broken = summary.brokenPages
-    .map((p) => row("Broken", `${p.url} -> ${p.status === null ? `no response (${p.error || "timeout"})` : `HTTP ${p.status}`}`))
-    .join("");
-  const slow = summary.slowPages
-    .map((p) => row("Slow", `${p.url} -> ${(p.responseTimeMs / 1000).toFixed(1)} s response`))
-    .join("");
-  const incidents = summary.incidents
-    .map((i) => row("Incident", `${i.page_url} | ${i.error_type || i.type}${i.status_code ? ` ${i.status_code}` : ""} | ${fmtTime(i.detected_at)} -> ${i.resolved_at ? fmtTime(i.resolved_at) : "open"}`))
-    .join("");
-
-  return `
-      <div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;margin-bottom:24px;font-family:Menlo,Consolas,monospace;">
-        <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#374151;letter-spacing:0.5px;font-family:Arial,sans-serif;">FOR YOUR DEVELOPER</p>
-        <table style="border-collapse:collapse;font-size:12px;width:100%;">${rows.join("")}${broken}${slow}${incidents}</table>
-        <p style="margin:10px 0 0;font-size:11px;color:#6B7280;font-family:Arial,sans-serif;">Full Lighthouse data: run <span style="font-family:Menlo,Consolas,monospace;">https://pagespeed.web.dev/report?url=${escapeHtml(encodeURIComponent(summary.latest?.url || ""))}</span></p>
-      </div>`;
+  const ps = `https://pagespeed.web.dev/report?url=${encodeURIComponent(site.url)}`;
+  return devBox(techTable(rows) + `<div style="height:8px;"></div>${small(`Full Lighthouse data: <a href="${ps}" style="color:${BRAND.muted};">pagespeed.web.dev</a>`)}`);
 }
 
 export function renderEmailHtml(site, summary) {
-  const title = summary.isFirstReport ? "Your first report" : "Your weekly report";
-  const banner = summary.isRegression && !summary.isFirstReport
-    ? `<div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:12px 16px;margin-bottom:24px;">
-         <p style="margin:0;font-size:14px;color:#92400E;"><strong>⚠️ Needs attention.</strong> Something on your site broke or got noticeably slower this week. Details below.</p>
-       </div>`
-    : "";
+  const first = summary.isFirstReport;
+  const kicker = first ? "First report" : "Weekly report";
+  const attention = summary.isRegression && !first;
+  const bullets = summary.bullets.map((b) => `<li style="margin:0 0 6px;">${esc(b)}</li>`).join("");
+  const recs = summary.recommendations.map((r) => `<li style="margin:0 0 8px;">${esc(r)}</li>`).join("");
 
-  const bullets = summary.bullets.map((b) => `<li style="margin-bottom:6px;">${escapeHtml(b)}</li>`).join("");
-  const recs = summary.recommendations.map((r) => `<li style="margin-bottom:8px;">${escapeHtml(r)}</li>`).join("");
+  const body = `
+    ${pill(first ? "Your first report" : attention ? "Needs attention" : "Weekly report", first ? "purple" : attention ? "warn" : "ok")}
+    <div style="height:14px;"></div>
+    ${h1(esc(site.name || site.url))}
+    ${attention ? panel(`${p(`${strong("⚠️ Something needs attention.")} A page broke or your site got noticeably slower this week. Details below.`, "margin-bottom:0;")}`, "warn") : ""}
 
-  const withUrl = { ...summary, latest: { ...(summary.latest || {}), url: site.url } };
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:6px 0 4px;"><tr>
+      <td style="font-family:${FONT};font-size:48px;font-weight:700;letter-spacing:-1.5px;line-height:1;color:${scoreColor(summary.score)};">${summary.score}<span style="font-size:18px;font-weight:500;color:${BRAND.muted};letter-spacing:0;">/100</span></td>
+      <td style="padding-left:14px;font-family:${FONT};font-size:16px;color:${BRAND.text};vertical-align:bottom;padding-bottom:6px;">${scoreWord(summary.score)}</td>
+    </tr></table>
+    ${small("How fast your homepage loads on a phone. Slow sites lose visitors before the page even appears.")}
+    <div style="height:16px;"></div>
 
-  return `
-    <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;background:#ffffff;">
-      <div style="margin-bottom:24px;"><span style="font-size:13px;font-weight:600;color:#6366F1;letter-spacing:1px;">PROMPTHALL.SPACE</span></div>
+    <ul style="margin:0 0 20px;padding-left:20px;font-family:${FONT};font-size:14.5px;line-height:1.6;color:${BRAND.text};">${bullets}</ul>
 
-      <p style="margin:0 0 4px;font-size:13px;color:#6B7280;">${escapeHtml(title)} for</p>
-      <h2 style="margin:0 0 20px;font-size:20px;color:#111827;">${escapeHtml(site.name || site.url)}</h2>
-      ${banner}
+    ${incidentsHtml(summary)}
 
-      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px;">
-        <span style="font-size:40px;font-weight:bold;color:${scoreColor(summary.score)};">${summary.score}<span style="font-size:18px;color:#9CA3AF;">/100</span></span>
-        <span style="font-size:15px;color:#374151;">${escapeHtml(scoreWord(summary.score))}</span>
-      </div>
-      <p style="margin:0 0 16px;font-size:13px;color:#6B7280;">How fast your homepage loads on a phone. Slow sites lose visitors before the page even appears.</p>
+    ${panel(`${label("What to do")}<ul style="margin:0 0 10px;padding-left:20px;font-family:${FONT};font-size:14.5px;line-height:1.6;color:${BRAND.text};">${recs}</ul>${small("Forward this email to your web developer — everything they need is in the box below.")}`)}
 
-      <ul style="color:#374151;font-size:14px;padding-left:20px;margin:0 0 24px;">${bullets}</ul>
+    ${technicalBlockHtml(site, summary)}
 
-      ${incidentsHtml(summary)}
+    ${small(first
+      ? "From now on we check your site every 5 minutes and email you within minutes if a page goes down, plus a report like this every Monday."
+      : "We keep checking your site every 5 minutes. Your next report arrives next Monday.")}`;
 
-      <div style="background:#F8FAFC;border-radius:8px;padding:16px;margin-bottom:24px;">
-        <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#111827;">What to do</p>
-        <ul style="color:#374151;font-size:14px;padding-left:20px;margin:0;">${recs}</ul>
-        <p style="margin:12px 0 0;font-size:13px;color:#6B7280;">Forward this email to your web developer. Everything they need is in the box below.</p>
-      </div>
-
-      ${technicalBlockHtml(withUrl)}
-
-      <p style="font-size:14px;color:#374151;">${summary.isFirstReport
-        ? "From now on we check your site every 5 minutes and email you within minutes if a page goes down, plus a report like this every Monday."
-        : "We keep checking your site every 5 minutes. Your next report arrives next Monday."}</p>
-
-      ${emailFooterHtml(site)}
-    </div>`;
+  return layout(site, { preheader: `${summary.score}/100 — ${scoreWord(summary.score)}. ${summary.bullets[0] || ""}`, kicker, body });
 }
